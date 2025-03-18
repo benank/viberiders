@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vibe-riders",
+  "compatibility_date": "2025-03-18",
+  "pages_build_output_dir": "dist",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "NODE_VERSION": "22.14.0"
+  }
+}
