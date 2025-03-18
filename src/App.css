@@ -3,6 +3,8 @@
 body {
   margin: 0;
   background-color: black;
+  overflow: hidden;
+  font-family: 'Orbitron', sans-serif;
 }
 
 @keyframes glow {
@@ -14,7 +16,8 @@ body {
   50% {
     text-shadow: 0 0 20px #00ffff,
                  0 0 30px #00ffff,
-                 0 0 40px #00ffff;
+                 0 0 40px #00ffff,
+                 0 0 50px #00ffff;
   }
   100% {
     text-shadow: 0 0 10px #00ffff,
@@ -26,4 +29,13 @@ body {
 .glowing-text {
   color: white;
   animation: glow 2s ease-in-out infinite;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 10;
+  mix-blend-mode: difference;
 }
+
+/* Add this in the <head> of index.html if you want to use it:
+   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+*/

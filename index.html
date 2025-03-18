@@ -6,14 +6,15 @@
       content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' 'unsafe-eval';
-        style-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         img-src 'self' data: blob:;
-        font-src 'self';
+        font-src 'self' https://fonts.gstatic.com;
         connect-src 'self' ws: wss:;
         frame-src 'none';
         object-src 'none';" 
     />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vibe Riders</title>
   </head>
