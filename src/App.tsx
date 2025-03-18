@@ -36,7 +36,17 @@ function App() {
         overflow: 'hidden'
       }}
     >
-      <div className="glowing-text">
+      {/* Three.js will be rendered as a canvas within this container with a lower z-index */}
+      
+      {/* Text overlay with higher z-index to ensure it's on top */}
+      <div 
+        className="glowing-text"
+        style={{
+          position: 'relative',
+          zIndex: 20,
+          pointerEvents: 'none' // Allows clicks to pass through
+        }}
+      >
         Vibe Riders
       </div>
     </div>
