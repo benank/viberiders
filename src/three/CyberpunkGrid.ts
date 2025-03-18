@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import HoverBoard from './HoverBoard';
 
 // Simple Perlin noise implementation for procedural generation
 class PerlinNoise {
@@ -104,6 +105,7 @@ class CyberpunkGrid {
   private clock: THREE.Clock;
   private animationId: number | null = null;
   private container: HTMLElement | null = null;
+  private hoverboard: HoverBoard | null = null;
 
   constructor() {
     // Initialize Perlin noise
@@ -120,9 +122,8 @@ class CyberpunkGrid {
       0.1,
       1000
     );
-    this.camera.position.z = 5;
-    this.camera.position.y = 1;
-    this.camera.rotation.x = -0.2;
+    this.camera.position.set(0, 3, 8); // Higher and further back
+    this.camera.rotation.x = -0.35; // Adjust angle to look at board
 
     // Initialize renderer
     this.renderer = new THREE.WebGLRenderer({ 
@@ -223,6 +224,13 @@ class CyberpunkGrid {
     const directionalLight = new THREE.DirectionalLight(0x00ffff, 0.2);
     directionalLight.position.set(0, 4, 5);
     this.scene.add(directionalLight);
+
+    // Initialize hoverboard
+    this.hoverboard = new HoverBoard();
+    const hoverboardMesh = this.hoverboard.getMesh();
+    hoverboardMesh.position.set(0, 1.2, 5); // Adjust board position
+    hoverboardMesh.scale.set(1, 1, 1);
+    this.scene.add(hoverboardMesh);
 
     // Handle resize
     window.addEventListener('resize', this.handleResize.bind(this));
@@ -367,6 +375,10 @@ class CyberpunkGrid {
     this.scene.remove(this.grid);
     this.scene.remove(this.sun);
     this.scene.remove(this.mountains);
+    if (this.hoverboard) {
+      this.scene.remove(this.hoverboard.getMesh());
+      this.hoverboard.dispose();
+    }
     this.sunGeometry.dispose();
     this.sunMaterial.dispose();
     this.renderer.dispose();
@@ -408,6 +420,11 @@ class CyberpunkGrid {
     
     // Add a subtle floating effect to the camera
     this.camera.position.y = 1 + Math.sin(elapsedTime * 0.5) * 0.05;
+
+    // Update the hoverboard
+    if (this.hoverboard) {
+      this.hoverboard.update(delta);
+    }
 
     // Render the scene
     this.renderer.render(this.scene, this.camera);

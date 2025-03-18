@@ -26,6 +26,18 @@ body {
   }
 }
 
+@keyframes buttonGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  }
+}
+
 .glowing-text {
   color: #ffffff;
   animation: glow 2s ease-in-out infinite;
@@ -42,6 +54,32 @@ body {
   backface-visibility: hidden;
   perspective: 1000;
   will-change: text-shadow;
+}
+
+.subtitle-text {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transform: translateZ(0);
+  will-change: text-shadow;
+}
+
+.start-button {
+  animation: buttonGlow 2s ease-in-out infinite;
+  transition: all 0.3s ease;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: 'Orbitron', sans-serif;
+  will-change: transform, box-shadow;
+}
+
+.start-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.9);
+  background: rgba(0, 255, 255, 0.2) !important;
+}
+
+.start-button:active {
+  transform: scale(0.98);
 }
 
 /* 3D scene background */
