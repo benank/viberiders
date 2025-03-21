@@ -1,9 +1,17 @@
 import { useEffect, useRef } from 'react'
 import './App.css'
 import { initCyberpunkGrid, cleanupCyberpunkGrid } from './three/init'
+import { useAtom } from 'jotai'
+import { gameStateAtom, distanceAtom } from './three/store/gameStore'
 
 function App() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [gameState, setGameState] = useAtom(gameStateAtom);
+  const [distance] = useAtom(distanceAtom);
+
+  const handleStartGame = () => {
+    setGameState('playing');
+  };
 
   useEffect(() => {
     // Initialize the Three.js background once the component is mounted
@@ -191,55 +199,79 @@ function App() {
       {/* Three.js will be rendered as a canvas within this container with a lower z-index */}
       
       {/* Game title at the top */}
-      <div 
-        className="game-header"
-        style={{
-          position: 'relative',
+      {gameState === 'idle' && (
+        <div 
+          className="game-header"
+          style={{
+            position: 'relative',
+            zIndex: 20,
+            pointerEvents: 'none', // Allows clicks to pass through
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            marginTop: '2rem'
+          }}
+        >
+          <div className="glowing-text" style={{ fontSize: '4rem', fontWeight: 'bold' }}>
+            Vibe Riders
+          </div>
+          <div className="subtitle-text" style={{ 
+            fontSize: '1.5rem', 
+            color: '#00ffff', 
+            textShadow: '0 0 8px #00ffff',
+            marginTop: '0.5rem',
+            opacity: 0.8
+          }}>
+            HOVER INTO THE FUTURE
+          </div>
+        </div>
+      )}
+
+      {/* Distance counter - only shown during gameplay */}
+      {gameState === 'playing' && (
+        <div className="distance-counter" style={{
+          position: 'fixed',
+          top: '2rem',
           zIndex: 20,
-          pointerEvents: 'none', // Allows clicks to pass through
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          marginTop: '2rem'
-        }}
-      >
-        <div className="glowing-text" style={{ fontSize: '4rem', fontWeight: 'bold' }}>
-          Vibe Riders
-        </div>
-        <div className="subtitle-text" style={{ 
-          fontSize: '1.5rem', 
-          color: '#00ffff', 
+          color: '#00ffff',
           textShadow: '0 0 8px #00ffff',
-          marginTop: '0.5rem',
-          opacity: 0.8
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          fontFamily: 'monospace'
         }}>
-          HOVER INTO THE FUTURE
+          {distance.toString().padStart(6, '0')} m
         </div>
-      </div>
+      )}
 
       {/* Game UI elements could be added here */}
-      <div style={{ 
-        position: 'fixed', 
-        bottom: '2rem', 
-        zIndex: 20,
-        display: 'flex',
-        justifyContent: 'center',
-        width: '100%'
-      }}>
-        <button className="start-button" style={{
-          background: 'rgba(0,0,0,0.5)',
-          border: '2px solid #00ffff',
-          color: '#00ffff',
-          padding: '0.8rem 2rem',
-          fontSize: '1.2rem',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          boxShadow: '0 0 15px rgba(0, 255, 255, 0.5)',
-          transition: 'all 0.3s ease'
+      {gameState === 'idle' && (
+        <div style={{ 
+          position: 'fixed', 
+          bottom: '2rem', 
+          zIndex: 20,
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%'
         }}>
-          START GAME
-        </button>
-      </div>
+          <button 
+            className="start-button" 
+            onClick={handleStartGame}
+            style={{
+              background: 'rgba(0,0,0,0.5)',
+              border: '2px solid #00ffff',
+              color: '#00ffff',
+              padding: '0.8rem 2rem',
+              fontSize: '1.2rem',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              boxShadow: '0 0 15px rgba(0, 255, 255, 0.5)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            START GAME
+          </button>
+        </div>
+      )}
     </div>
   )
 }

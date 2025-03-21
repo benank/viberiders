@@ -4,6 +4,8 @@ import { Grid } from '../objects/Grid';
 import { Mountains } from '../objects/Mountains';
 import { Sun } from '../objects/Sun';
 import { HoverBoard } from '../objects/HoverBoard';
+import { gameStateAtom, distanceAtom, GameState } from '../store/gameStore';
+import { getDefaultStore } from 'jotai';
 
 /**
  * The main cyberpunk-themed scene
@@ -13,6 +15,11 @@ export class CyberpunkScene extends Scene {
   private mountains: Mountains;
   private sun: Sun;
   private hoverboard: HoverBoard;
+  private keyStates: { [key: string]: boolean } = {};
+  private store = getDefaultStore();
+  private gameState: GameState = 'idle';
+  private speed = 5;
+  private cameraOffset = new THREE.Vector3(0, 3, 10);
   
   constructor() {
     super();
@@ -29,6 +36,19 @@ export class CyberpunkScene extends Scene {
     this.mountains = new Mountains();
     this.sun = new Sun();
     this.hoverboard = new HoverBoard();
+    
+    // Setup keyboard controls
+    this.setupKeyboardControls();
+    
+    // Store subscription
+    this.store.sub(gameStateAtom, () => {
+      this.gameState = this.store.get(gameStateAtom);
+      if (this.gameState === 'playing') {
+        this.hoverboard.startMoving();
+      } else {
+        this.hoverboard.stopMoving();
+      }
+    });
   }
   
   /**
@@ -78,10 +98,58 @@ export class CyberpunkScene extends Scene {
   }
   
   /**
+   * Set up keyboard controls for the hoverboard
+   */
+  private setupKeyboardControls(): void {
+    // Set up key event listeners
+    window.addEventListener('keydown', (event) => {
+      this.keyStates[event.code] = true;
+    });
+    
+    window.addEventListener('keyup', (event) => {
+      this.keyStates[event.code] = false;
+    });
+  }
+  
+  /**
+   * Check and handle keyboard input
+   */
+  private handleKeyboardInput(): void {
+    if (this.gameState !== 'playing') return;
+    
+    // Left movement - left arrow or A
+    if (this.keyStates['ArrowLeft'] || this.keyStates['KeyA']) {
+      this.hoverboard.moveLeft();
+    }
+    
+    // Right movement - right arrow or D
+    if (this.keyStates['ArrowRight'] || this.keyStates['KeyD']) {
+      this.hoverboard.moveRight();
+    }
+  }
+  
+  /**
+   * Update the distance in the store
+   */
+  private updateDistance(): void {
+    if (this.gameState === 'playing') {
+      // Use negative value since we're moving in negative Z direction
+      const distance = Math.abs(this.hoverboard.getDistance());
+      this.store.set(distanceAtom, Math.floor(distance));
+    }
+  }
+  
+  /**
    * Update the scene (called every frame)
    */
   public update(): void {
     const deltaTime = this.clock.getDelta();
+    
+    // Handle keyboard input
+    this.handleKeyboardInput();
+    
+    // Update distance counter
+    this.updateDistance();
     
     // Update grid
     this.grid.update(deltaTime);
@@ -108,6 +176,10 @@ export class CyberpunkScene extends Scene {
    * Dispose of all resources
    */
   public dispose(): void {
+    // Remove event listeners
+    window.removeEventListener('keydown', this.handleKeyboardInput);
+    window.removeEventListener('keyup', this.handleKeyboardInput);
+    
     // Dispose grid
     this.grid.dispose();
     

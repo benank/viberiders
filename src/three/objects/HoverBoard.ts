@@ -12,6 +12,18 @@ export class HoverBoard {
   private boardMesh: THREE.Mesh;
   private boardMaterial: THREE.ShaderMaterial;
   private hoverHeight: number = 0.8; // Base hover height
+  
+  // Movement properties
+  private position = { x: 0, z: 5 };
+  private targetPosition = { x: 0, z: 5 };
+  private velocity = { x: 0, z: 0 };
+  private speed = 0; // Forward speed
+  private maxSpeed = 20; // Maximum forward speed
+  private acceleration = 0.05; // Speed increase per second
+  private lateralSpeed = 3; // Side-to-side movement speed
+  private laneWidth = 2; // Width of a lane
+  private maxLateralPosition = 4; // Maximum distance from center
+  private isMoving = false;
 
   constructor() {
     this.mesh = new THREE.Group();
@@ -89,6 +101,49 @@ export class HoverBoard {
   }
 
   /**
+   * Start the hoverboard movement
+   */
+  public startMoving(): void {
+    this.isMoving = true;
+    this.speed = 5; // Initial speed
+  }
+
+  /**
+   * Stop the hoverboard movement
+   */
+  public stopMoving(): void {
+    this.isMoving = false;
+    this.speed = 0;
+  }
+
+  /**
+   * Move the hoverboard to the left
+   */
+  public moveLeft(): void {
+    if (!this.isMoving) return;
+    if (this.targetPosition.x > -this.maxLateralPosition) {
+      this.targetPosition.x -= this.laneWidth;
+    }
+  }
+
+  /**
+   * Move the hoverboard to the right
+   */
+  public moveRight(): void {
+    if (!this.isMoving) return;
+    if (this.targetPosition.x < this.maxLateralPosition) {
+      this.targetPosition.x += this.laneWidth;
+    }
+  }
+
+  /**
+   * Get the current distance traveled
+   */
+  public getDistance(): number {
+    return this.position.z;
+  }
+
+  /**
    * Update the hoverboard animation
    * @param deltaTime Time since last frame
    */
@@ -107,6 +162,29 @@ export class HoverBoard {
     // Animate the glow intensity
     const intensity = 1.2 + Math.sin(elapsedTime * 2) * 0.3;
     this.glowEffect.intensity = intensity;
+
+    // Handle forward movement
+    if (this.isMoving) {
+      // Accelerate up to max speed
+      this.speed = Math.min(this.speed + this.acceleration * deltaTime, this.maxSpeed);
+      
+      // Move forward
+      this.position.z -= this.speed * deltaTime;
+    }
+
+    // Handle lateral movement (smooth transition to target position)
+    const lateralDiff = this.targetPosition.x - this.position.x;
+    if (Math.abs(lateralDiff) > 0.01) {
+      this.position.x += Math.sign(lateralDiff) * Math.min(this.lateralSpeed * deltaTime, Math.abs(lateralDiff));
+    }
+
+    // Update mesh position
+    this.mesh.position.x = this.position.x;
+    this.mesh.position.z = 5; // Keep the hoverboard at a fixed z position relative to camera
+    
+    // Calculate board tilt based on lateral movement
+    const lateralTilt = -Math.sign(lateralDiff) * Math.min(Math.abs(lateralDiff) * 0.2, 0.2);
+    this.mesh.rotation.z = lateralTilt;
 
     // Subtle floating animation - adjust to hover above the grid
     const floatOffset = Math.sin(elapsedTime * 1.5) * 0.05;
