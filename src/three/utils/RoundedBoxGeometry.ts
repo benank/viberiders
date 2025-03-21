@@ -15,7 +15,13 @@ function getUv(faceDirVector: Vector3, normal: Vector3, uvAxis: string, projecti
 
 	// Get the vector projected onto the Y plane
 	_tempNormal.copy(normal);
-	_tempNormal[projectionAxis as keyof Vector3] = 0;
+	if (projectionAxis === 'x') {
+		_tempNormal.x = 0;
+	} else if (projectionAxis === 'y') {
+		_tempNormal.y = 0;
+	} else if (projectionAxis === 'z') {
+		_tempNormal.z = 0;
+	}
 	_tempNormal.normalize();
 
 	// total amount of UV space alloted to a single arc
@@ -24,7 +30,11 @@ function getUv(faceDirVector: Vector3, normal: Vector3, uvAxis: string, projecti
 	// the distance along one arc the point is at
 	const arcAngleRatio = 1.0 - (_tempNormal.angleTo(faceDirVector) / halfArc);
 
-	if (Math.sign(_tempNormal[uvAxis as keyof Vector3] as number) === 1) {
+	if (
+		(uvAxis === 'x' && Math.sign(_tempNormal.x) === 1) ||
+		(uvAxis === 'y' && Math.sign(_tempNormal.y) === 1) ||
+		(uvAxis === 'z' && Math.sign(_tempNormal.z) === 1)
+	) {
 		return arcAngleRatio * arcUvRatio;
 	} else {
 		// total amount of UV space alloted to the plane between the arcs
