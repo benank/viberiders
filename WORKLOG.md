@@ -31,7 +31,7 @@ The new architecture follows a clear separation of concerns:
 - **`src/three/objects/Grid.ts`** - Represents the floor grid with an opaque gradient surface and grid lines overlay. Creates a visually appealing cyberpunk ground.
 - **`src/three/objects/Mountains.ts`** - Procedurally generated distant mountains using Perlin noise for a dynamic landscape effect.
 - **`src/three/objects/Sun.ts`** - Synthwave sun with gradient shader for vibrant background effects.
-- **`src/three/objects/HoverBoard.ts`** - Hovering board with glowing effects that floats above the grid. Features shader-based holographic materials. Now includes movement controls and game mechanics.
+- **`src/three/objects/HoverBoard.ts`** - Hovering board with glowing effects that floats above the grid. Features shader-based holographic materials. Now includes a 3-lane movement system and game mechanics.
 
 ### Shaders
 
@@ -60,27 +60,34 @@ The application now includes gameplay functionality with the following features:
    - When clicked, the game UI transitions to gameplay mode
    - Hides title and start button, showing only the distance counter
 
-2. **Hoverboard Controls**:
-   - Left/Right arrow keys and A/D keys for side-to-side movement
-   - Automatic forward motion with increasing speed
-   - Smooth lane-changing motion with animation
+2. **Temple Run Style 3-Lane System**:
+   - Simplified lane mechanics with three fixed positions (left, center, right)
+   - Visual lane markers to indicate the three lanes
+   - Left/Right arrow keys and A/D keys for switching lanes
+   - Smooth transitions between lanes with animation
    - Board tilts when turning for visual effect
 
-3. **Distance Counter**:
+3. **Continuous Forward Movement**:
+   - Hoverboard stays in a fixed position relative to the camera
+   - The scene (grid, mountains) moves toward the player creating an illusion of forward movement
+   - Speed gradually increases as the player advances
+   - Parallax effect with different movement speeds for distant objects
+
+4. **Distance Counter**:
    - Real-time distance meter shown during gameplay
-   - Distance increases as the hoverboard moves forward
+   - Distance increases automatically as the game progresses
    - Displayed with leading zeros for visual appeal (e.g., 000123 m)
 
-4. **Game State Management**:
+5. **Game State Management**:
    - Implemented with Jotai for clean state management
    - Tracks game state (idle/playing/gameOver)
    - Manages distance and score
    - Enables future expansion for more game elements
 
-5. **Board Physics**:
-   - Gradually increasing forward speed
-   - Controlled lateral movement with lane-based positioning
-   - Visual feedback through board tilting and animations
+6. **Visual Feedback**:
+   - Lighting and glow effects enhance the gameplay experience
+   - Scene elements loop/reset when they move past certain thresholds
+   - Smooth acceleration as the game progresses
 
 ## Key Improvements
 
@@ -90,18 +97,21 @@ The application now includes gameplay functionality with the following features:
    - Added gradient coloring from cyan to dark blue/purple
    - Separated grid lines from the floor surface
    - Fixed perspective with proper orientation
+   - Implemented continuous movement for Temple Run style mechanics
 
 3. **Mountains Optimization**:
    - Reduced mountain heights for better visual balance
    - Positioned mountains further back in the scene
    - Adjusted geometry and materials for better performance
    - Implemented proper fog integration
+   - Added parallax scrolling effect
 
 4. **Hoverboard Enhancements**:
    - Improved hover effect with consistent height
    - Added glow underneath for visual effect
    - Ensured correct positioning above the grid
-   - Added movement controls and animation
+   - Simplified controls to 3-lane system like Temple Run
+   - Added visual feedback during lane changes
    - Implemented physics-based motion
 
 5. **Lighting Improvements**:
@@ -117,6 +127,7 @@ The application now includes gameplay functionality with the following features:
    - Organized shaders for better reusability
    - Implemented game controls and state management
    - Added UI components for game interaction
+   - Created virtual camera mechanics for infinite scrolling
 
 ## Future Development
 

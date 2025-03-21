@@ -21,6 +21,11 @@ export class CyberpunkScene extends Scene {
   private speed = 5;
   private cameraOffset = new THREE.Vector3(0, 3, 10);
   
+  // Scene positions
+  private gridInitialZ = 0;
+  private mountainsInitialZ = -80;
+  private sunInitialZ = -60;
+  
   constructor() {
     super();
     
@@ -56,17 +61,19 @@ export class CyberpunkScene extends Scene {
    */
   public initialize(): void {
     // Add grid to scene
-    this.scene.add(this.grid.getMesh());
+    const gridMesh = this.grid.getMesh();
+    gridMesh.position.z = this.gridInitialZ;
+    this.scene.add(gridMesh);
     
     // Add mountains to scene - position them far back and lower
     const mountainsMesh = this.mountains.getMesh();
-    mountainsMesh.position.z = -80; // Keep mountains far back
+    mountainsMesh.position.z = this.mountainsInitialZ; // Keep mountains far back
     mountainsMesh.position.y = -12; // Lower position further to reduce visibility under the grid
     this.scene.add(mountainsMesh);
     
     // Adjust sun position for better composition
     const sunMesh = this.sun.getMesh();
-    sunMesh.position.z = -60; // Move back with mountains
+    sunMesh.position.z = this.sunInitialZ; // Move back with mountains
     sunMesh.position.y = 6; // Higher in the sky
     this.scene.add(sunMesh);
     
@@ -95,6 +102,32 @@ export class CyberpunkScene extends Scene {
     spotlight.target.position.set(0, 0, 5);
     this.scene.add(spotlight);
     this.scene.add(spotlight.target);
+    
+    // Create lane marker visuals
+    this.createLaneMarkers();
+  }
+  
+  /**
+   * Create lane markers to show the three lanes
+   */
+  private createLaneMarkers(): void {
+    const laneWidth = 2.5;
+    const lanePositions = [-laneWidth, 0, laneWidth]; // Same as HoverBoard.lanes
+    
+    // Create a simple lane marker for each lane
+    lanePositions.forEach(xPos => {
+      // Create a glowing line to represent the lane
+      const markerGeometry = new THREE.BoxGeometry(0.2, 0.05, 40);
+      const markerMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.3,
+      });
+      
+      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+      marker.position.set(xPos, 0.01, 5); // Slightly above the grid
+      this.scene.add(marker);
+    });
   }
   
   /**
@@ -129,12 +162,46 @@ export class CyberpunkScene extends Scene {
   }
   
   /**
+   * Update the scene elements to create illusion of forward movement
+   * @param deltaTime Time since last frame
+   */
+  private updateSceneMovement(deltaTime: number): void {
+    if (this.gameState !== 'playing') return;
+    
+    // Get the speed from hoverboard
+    const distance = this.hoverboard.getDistance();
+    const speed = 8 + Math.min(distance / 500, 12); // Gradually increase speed
+    
+    // Move the grid to create illusion of movement
+    const gridMesh = this.grid.getMesh();
+    
+    // Reset grid position if it's gone too far
+    if (gridMesh.position.z > 20) {
+      gridMesh.position.z = this.gridInitialZ;
+    }
+    
+    // Move grid forward
+    gridMesh.position.z += speed * deltaTime;
+    
+    // Move mountains slightly for parallax effect
+    const mountainsSpeed = speed * 0.2;
+    const mountainsMesh = this.mountains.getMesh();
+    
+    // Reset mountains position if they've gone too far
+    if (mountainsMesh.position.z > -40) {
+      mountainsMesh.position.z = this.mountainsInitialZ;
+    }
+    
+    // Move mountains forward
+    mountainsMesh.position.z += mountainsSpeed * deltaTime;
+  }
+  
+  /**
    * Update the distance in the store
    */
   private updateDistance(): void {
     if (this.gameState === 'playing') {
-      // Use negative value since we're moving in negative Z direction
-      const distance = Math.abs(this.hoverboard.getDistance());
+      const distance = this.hoverboard.getDistance();
       this.store.set(distanceAtom, Math.floor(distance));
     }
   }
@@ -147,6 +214,9 @@ export class CyberpunkScene extends Scene {
     
     // Handle keyboard input
     this.handleKeyboardInput();
+    
+    // Update scene movement
+    this.updateSceneMovement(deltaTime);
     
     // Update distance counter
     this.updateDistance();

@@ -20,10 +20,13 @@ export class HoverBoard {
   private speed = 0; // Forward speed
   private maxSpeed = 20; // Maximum forward speed
   private acceleration = 0.05; // Speed increase per second
-  private lateralSpeed = 3; // Side-to-side movement speed
-  private laneWidth = 2; // Width of a lane
-  private maxLateralPosition = 4; // Maximum distance from center
+  private lateralSpeed = 5; // Side-to-side movement speed
+  private laneWidth = 2.5; // Width of a lane
   private isMoving = false;
+  
+  // Lane system
+  private lanes = [-this.laneWidth, 0, this.laneWidth]; // Left, Center, Right
+  private currentLane = 1; // Start in center lane (index 1)
 
   constructor() {
     this.mesh = new THREE.Group();
@@ -105,7 +108,10 @@ export class HoverBoard {
    */
   public startMoving(): void {
     this.isMoving = true;
-    this.speed = 5; // Initial speed
+    this.speed = 8; // Initial speed
+    this.currentLane = 1; // Reset to center lane
+    this.targetPosition.x = this.lanes[this.currentLane];
+    this.position.z = 5; // Reset z position
   }
 
   /**
@@ -120,27 +126,27 @@ export class HoverBoard {
    * Move the hoverboard to the left
    */
   public moveLeft(): void {
-    if (!this.isMoving) return;
-    if (this.targetPosition.x > -this.maxLateralPosition) {
-      this.targetPosition.x -= this.laneWidth;
-    }
+    if (!this.isMoving || this.currentLane === 0) return;
+    
+    this.currentLane--;
+    this.targetPosition.x = this.lanes[this.currentLane];
   }
 
   /**
    * Move the hoverboard to the right
    */
   public moveRight(): void {
-    if (!this.isMoving) return;
-    if (this.targetPosition.x < this.maxLateralPosition) {
-      this.targetPosition.x += this.laneWidth;
-    }
+    if (!this.isMoving || this.currentLane === 2) return;
+    
+    this.currentLane++;
+    this.targetPosition.x = this.lanes[this.currentLane];
   }
 
   /**
    * Get the current distance traveled
    */
   public getDistance(): number {
-    return this.position.z;
+    return Math.abs(this.position.z - 5);
   }
 
   /**
@@ -168,7 +174,7 @@ export class HoverBoard {
       // Accelerate up to max speed
       this.speed = Math.min(this.speed + this.acceleration * deltaTime, this.maxSpeed);
       
-      // Move forward
+      // Move forward (decrease z value)
       this.position.z -= this.speed * deltaTime;
     }
 
