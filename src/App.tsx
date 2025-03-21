@@ -2,15 +2,21 @@ import { useEffect, useRef } from 'react'
 import './App.css'
 import { initCyberpunkGrid, cleanupCyberpunkGrid } from './three/init'
 import { useAtom } from 'jotai'
-import { gameStateAtom, distanceAtom } from './three/store/gameStore'
+import { gameStateAtom, distanceAtom, finalScoreAtom, highScoreAtom, restartGame } from './three/store/gameStore'
 
 function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [gameState, setGameState] = useAtom(gameStateAtom);
   const [distance] = useAtom(distanceAtom);
+  const [finalScore] = useAtom(finalScoreAtom);
+  const [highScore] = useAtom(highScoreAtom);
 
   const handleStartGame = () => {
     setGameState('playing');
+  };
+  
+  const handleRestartGame = () => {
+    restartGame();
   };
 
   useEffect(() => {
@@ -242,34 +248,135 @@ function App() {
           {distance.toString().padStart(6, '0')} m
         </div>
       )}
+      
+      {/* Game Over Screen */}
+      {gameState === 'gameOver' && (
+        <div 
+          className="game-over"
+          style={{
+            position: 'fixed',
+            zIndex: 20,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(0, 0, 0, 0.7)',
+            padding: '2rem',
+            borderRadius: '10px',
+            boxShadow: '0 0 20px #ff00ff',
+            border: '1px solid #ff00ff'
+          }}
+        >
+          <div className="glowing-text" style={{ 
+            fontSize: '3rem', 
+            fontWeight: 'bold',
+            color: '#ff00ff',
+            textShadow: '0 0 15px #ff00ff',
+            marginBottom: '1rem'
+          }}>
+            GAME OVER
+          </div>
+          
+          <div style={{ marginBottom: '0.5rem', color: '#00ffff', fontSize: '1.5rem' }}>
+            Distance: <span style={{ fontWeight: 'bold' }}>{distance.toString().padStart(6, '0')} m</span>
+          </div>
+          
+          <div style={{ marginBottom: '1.5rem', color: '#00ffff', fontSize: '1.5rem' }}>
+            Final Score: <span style={{ fontWeight: 'bold' }}>{finalScore}</span>
+          </div>
+          
+          <div style={{ marginBottom: '2rem', color: '#ffff00', fontSize: '1.2rem' }}>
+            High Score: <span style={{ fontWeight: 'bold' }}>{highScore}</span>
+          </div>
+          
+          <button 
+            className="cyberpunk-button"
+            onClick={handleRestartGame}
+            style={{
+              background: 'rgba(0, 255, 255, 0.2)',
+              border: '2px solid #00ffff',
+              color: '#00ffff',
+              padding: '0.8rem 2rem',
+              fontSize: '1.2rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              borderRadius: '5px',
+              boxShadow: '0 0 10px #00ffff',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 255, 255, 0.3)';
+              e.currentTarget.style.boxShadow = '0 0 15px #00ffff';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 255, 255, 0.2)';
+              e.currentTarget.style.boxShadow = '0 0 10px #00ffff';
+            }}
+          >
+            PLAY AGAIN
+          </button>
+        </div>
+      )}
 
-      {/* Game UI elements could be added here */}
+      {/* Start Game Button - shown only in idle state */}
       {gameState === 'idle' && (
         <div style={{ 
           position: 'fixed', 
           bottom: '2rem', 
           zIndex: 20,
           display: 'flex',
-          justifyContent: 'center',
-          width: '100%'
+          flexDirection: 'column',
+          alignItems: 'center'
         }}>
+          <div style={{ 
+            color: '#ff00ff', 
+            textShadow: '0 0 5px #ff00ff',
+            marginBottom: '1rem',
+            fontSize: '1rem'
+          }}>
+            Use ← → arrows or A/D keys to change lanes
+          </div>
+          
           <button 
-            className="start-button" 
+            className="start-button"
             onClick={handleStartGame}
             style={{
-              background: 'rgba(0,0,0,0.5)',
-              border: '2px solid #00ffff',
-              color: '#00ffff',
-              padding: '0.8rem 2rem',
-              fontSize: '1.2rem',
-              borderRadius: '4px',
+              background: 'rgba(255, 0, 255, 0.2)',
+              border: '2px solid #ff00ff',
+              color: '#ff00ff',
+              padding: '1rem 2.5rem',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
               cursor: 'pointer',
-              boxShadow: '0 0 15px rgba(0, 255, 255, 0.5)',
-              transition: 'all 0.3s ease'
+              borderRadius: '5px',
+              boxShadow: '0 0 10px #ff00ff',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 0, 255, 0.3)';
+              e.currentTarget.style.boxShadow = '0 0 15px #ff00ff';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 0, 255, 0.2)';
+              e.currentTarget.style.boxShadow = '0 0 10px #ff00ff';
             }}
           >
             START GAME
           </button>
+          
+          {highScore > 0 && (
+            <div style={{ 
+              color: '#ffff00', 
+              textShadow: '0 0 5px #ffff00',
+              marginTop: '1rem',
+              fontSize: '1rem'
+            }}>
+              High Score: {highScore}
+            </div>
+          )}
         </div>
       )}
     </div>

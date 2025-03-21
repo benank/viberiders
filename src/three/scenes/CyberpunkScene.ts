@@ -4,7 +4,8 @@ import { Grid } from '../objects/Grid';
 import { Mountains } from '../objects/Mountains';
 import { Sun } from '../objects/Sun';
 import { HoverBoard } from '../objects/HoverBoard';
-import { gameStateAtom, distanceAtom, GameState } from '../store/gameStore';
+import { Obstacle } from '../objects/Obstacle';
+import { gameStateAtom, distanceAtom, GameState, scoreAtom } from '../store/gameStore';
 import { getDefaultStore } from 'jotai';
 
 /**
@@ -15,6 +16,14 @@ export class CyberpunkScene extends Scene {
   private mountains: Mountains;
   private sun: Sun;
   private hoverboard: HoverBoard;
+  private obstacles: Obstacle[] = [];
+  private obstaclePool: Obstacle[] = [];
+  private nextObstacleTime: number = 0;
+  private minObstacleSpacing: number = 3.0; // Increased minimum spacing for better gameplay
+  private maxObstacleSpacing: number = 6.0; // Increased maximum spacing for better gameplay
+  private obstacleSpawningActive: boolean = false;
+  private hoverboardBox: THREE.Box3 = new THREE.Box3();
+  private gameTime: number = 0;
   private keyStates: { [key: string]: boolean } = {};
   private store = getDefaultStore();
   private gameState: GameState = 'idle';
@@ -47,12 +56,8 @@ export class CyberpunkScene extends Scene {
     
     // Store subscription
     this.store.sub(gameStateAtom, () => {
-      this.gameState = this.store.get(gameStateAtom);
-      if (this.gameState === 'playing') {
-        this.hoverboard.startMoving();
-      } else {
-        this.hoverboard.stopMoving();
-      }
+      const newState = this.store.get(gameStateAtom);
+      this.handleGameStateChange(newState);
     });
   }
   
@@ -105,8 +110,173 @@ export class CyberpunkScene extends Scene {
     this.scene.add(spotlight);
     this.scene.add(spotlight.target);
     
-    // Create lane marker visuals
+    // Create lane markers to show the three lanes
     this.createLaneMarkers();
+    
+    // Initialize obstacle pool
+    this.initializeObstaclePool();
+  }
+  
+  /**
+   * Initialize a pool of reusable obstacles
+   */
+  private initializeObstaclePool(): void {
+    // Create a pool of obstacles that we can reuse
+    const poolSize = 10; // Pool size of 10 obstacles should be more than enough
+    
+    for (let i = 0; i < poolSize; i++) {
+      // Create obstacles but keep them far away and inactive initially
+      const obstacle = new Obstacle(1, -200);
+      this.obstaclePool.push(obstacle);
+      this.scene.add(obstacle.getMesh());
+      obstacle.setActive(false); // Initially inactive
+    }
+  }
+  
+  /**
+   * Get an obstacle from the pool
+   */
+  private getObstacleFromPool(): Obstacle | null {
+    for (const obstacle of this.obstaclePool) {
+      if (!obstacle.isObstacleActive()) {
+        return obstacle;
+      }
+    }
+    return null; // No available obstacles in the pool
+  }
+  
+  /**
+   * Spawn a new obstacle
+   */
+  private spawnObstacle(): void {
+    if (!this.obstacleSpawningActive) return;
+    
+    const obstacle = this.getObstacleFromPool();
+    if (!obstacle) return; // No available obstacles in the pool
+    
+    // Choose a random lane (0, 1, or 2)
+    let lane = Math.floor(Math.random() * 3);
+    
+    // Check if there's already an obstacle in this lane that's too close
+    const tooClose = this.obstacles.some(existing => {
+      const existingZ = existing.getMesh().position.z;
+      const existingLane = existing.getLane();
+      // Don't spawn in the same lane if there's already an obstacle within 20 units
+      return (existingLane === lane) && (existingZ < -80) && (existingZ > -140);
+    });
+    
+    // If too close, try a different lane
+    if (tooClose) {
+      // Try a different lane (cyclically)
+      lane = (lane + 1 + Math.floor(Math.random() * 2)) % 3;
+    }
+    
+    // Ensure obstacles are spawned far enough away to be invisible initially
+    // This helps with performance as they become visible more gradually
+    const startZ = -140; 
+    
+    // Initialize the obstacle
+    obstacle.reset(lane, startZ);
+    
+    // Add to active obstacles list
+    this.obstacles.push(obstacle);
+    
+    // Set time for next obstacle - adjust timing based on current speed
+    const distance = this.hoverboard.getDistance();
+    const speedFactor = Math.min(distance / 1000, 1); // Max speedup factor of 1
+    
+    // As the game progresses, decrease the minimum and maximum obstacle spacing
+    // This makes the game gradually more challenging
+    const adjustedMinSpacing = Math.max(this.minObstacleSpacing - speedFactor, 1.5);
+    const adjustedMaxSpacing = Math.max(this.maxObstacleSpacing - speedFactor * 2, 3.0);
+    
+    this.nextObstacleTime = this.gameTime + adjustedMinSpacing + 
+                          Math.random() * (adjustedMaxSpacing - adjustedMinSpacing);
+  }
+  
+  /**
+   * Update obstacles
+   */
+  private updateObstacles(deltaTime: number, speed: number): void {
+    // Check if it's time to spawn a new obstacle
+    if (this.gameTime >= this.nextObstacleTime) {
+      this.spawnObstacle();
+    }
+    
+    // Update all active obstacles - limit the number of active obstacles for performance
+    const maxVisibleObstacles = 6; // Slight increase to ensure smooth performance
+    
+    // Sort obstacles by z-position (closest first) to prioritize updating the closest ones
+    this.obstacles.sort((a, b) => b.getMesh().position.z - a.getMesh().position.z);
+    
+    // Only update the closest obstacles
+    const obstaclesToUpdate = Math.min(this.obstacles.length, maxVisibleObstacles);
+    
+    for (let i = 0; i < obstaclesToUpdate; i++) {
+      this.obstacles[i].update(deltaTime, speed);
+    }
+    
+    // Check for obstacles that are past the player
+    for (let i = this.obstacles.length - 1; i >= 0; i--) {
+      const obstacle = this.obstacles[i];
+      
+      // Check if obstacle is past the player
+      if (obstacle.isPastPlayer()) {
+        // Remove from active obstacles
+        this.obstacles.splice(i, 1);
+        obstacle.setActive(false);
+        
+        // Update score (player successfully avoided this obstacle)
+        const currentScore = this.store.get(scoreAtom);
+        this.store.set(scoreAtom, currentScore + 10);
+      }
+    }
+  }
+  
+  /**
+   * Check for collisions between hoverboard and obstacles
+   */
+  private checkCollisions(): void {
+    if (this.gameState !== 'playing') return;
+    
+    // Only update the bounding box once per frame
+    const hoverboardMesh = this.hoverboard.getMesh();
+    this.hoverboardBox.setFromObject(hoverboardMesh);
+    
+    // Only check collisions with obstacles that are close to the player
+    // Sort obstacles by proximity to player for more efficient checks
+    const closeObstacles = this.obstacles.filter(obstacle => {
+      const obstacleZ = obstacle.getMesh().position.z;
+      // Only check obstacles within collision range (between -5 and 8)
+      return obstacleZ > -5 && obstacleZ < 8;
+    });
+    
+    // Check collision with each close obstacle
+    for (const obstacle of closeObstacles) {
+      if (obstacle.isObstacleActive()) {
+        const obstacleBox = obstacle.getBoundingBox();
+        
+        if (this.hoverboardBox.intersectsBox(obstacleBox)) {
+          // Collision detected!
+          this.handleCollision();
+          break;
+        }
+      }
+    }
+  }
+  
+  /**
+   * Handle collision with obstacle
+   */
+  private handleCollision(): void {
+    // Set game state to game over
+    this.store.set(gameStateAtom, 'gameOver');
+    
+    // Stop obstacle spawning
+    this.obstacleSpawningActive = false;
+    
+    // Visual/audio feedback could be added here
+    console.log('Collision! Game Over');
   }
   
   /**
@@ -185,6 +355,9 @@ export class CyberpunkScene extends Scene {
     // Move grid forward
     gridMesh.position.z += speed * deltaTime;
     
+    // Update obstacles with the same speed
+    this.updateObstacles(deltaTime, speed);
+    
     // Mountains and sun remain stationary - no movement code for these objects
   }
   
@@ -203,12 +376,16 @@ export class CyberpunkScene extends Scene {
    */
   public update(): void {
     const deltaTime = this.clock.getDelta();
+    this.gameTime += deltaTime;
     
     // Handle keyboard input
     this.handleKeyboardInput();
     
     // Update scene movement
     this.updateSceneMovement(deltaTime);
+    
+    // Check for collisions
+    this.checkCollisions();
     
     // Update distance counter
     this.updateDistance();
@@ -235,6 +412,55 @@ export class CyberpunkScene extends Scene {
   }
   
   /**
+   * Handle game state changes
+   */
+  private handleGameStateChange(newState: GameState): void {
+    this.gameState = newState;
+    
+    if (newState === 'playing') {
+      // Reset game variables
+      this.gameTime = 0;
+      this.nextObstacleTime = 4.0; // Start first obstacle after 4 seconds for better player ramp-up
+      this.obstacleSpawningActive = true;
+      
+      // Clear existing obstacles
+      for (const obstacle of this.obstacles) {
+        obstacle.setActive(false);
+      }
+      this.obstacles = [];
+      
+      // Make sure all pool objects are properly hidden
+      for (const obstacle of this.obstaclePool) {
+        obstacle.setActive(false);
+      }
+      
+      // Start hoverboard movement
+      this.hoverboard.startMoving();
+    } else if (newState === 'gameOver') {
+      // Stop hoverboard movement
+      this.hoverboard.stopMoving();
+      
+      // Stop obstacle spawning
+      this.obstacleSpawningActive = false;
+    }
+  }
+  
+  /**
+   * Reset the scene for a new game
+   */
+  public resetGame(): void {
+    // Reset all obstacles to inactive
+    for (const obstacle of this.obstacles) {
+      obstacle.setActive(false);
+    }
+    this.obstacles = [];
+    
+    // Reset game variables
+    this.gameTime = 0;
+    this.nextObstacleTime = 0;
+  }
+  
+  /**
    * Dispose of all resources
    */
   public dispose(): void {
@@ -254,20 +480,9 @@ export class CyberpunkScene extends Scene {
     // Dispose hoverboard
     this.hoverboard.dispose();
     
-    // Clear the scene
-    while(this.scene.children.length > 0) { 
-      const object = this.scene.children[0];
-      if (object instanceof THREE.Mesh) {
-        if (object.geometry) object.geometry.dispose();
-        if (object.material) {
-          if (Array.isArray(object.material)) {
-            object.material.forEach(material => material.dispose());
-          } else {
-            object.material.dispose();
-          }
-        }
-      }
-      this.scene.remove(object);
+    // Dispose obstacles
+    for (const obstacle of this.obstaclePool) {
+      obstacle.dispose();
     }
   }
 } 

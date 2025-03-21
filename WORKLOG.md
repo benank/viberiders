@@ -208,3 +208,94 @@ The modular architecture makes it easier to:
 9. Create multiplayer capabilities
 
 Each component can be developed, tested, and optimized independently, making future enhancements simpler and more maintainable.
+
+## Obstacle System and Game Mechanics
+
+1. **Random Obstacles**:
+   - Added cyberpunk-themed obstacles that appear randomly in the three lanes
+   - Designed with glowing edges, holographic elements, and neon lighting
+   - Created pooling system for efficient obstacle management
+   - Implemented staggered spawn timing for better game flow
+   - Applied subtle animations (rotation) to obstacles for visual appeal
+
+2. **Collision Detection System**:
+   - Implemented bounding box collision detection between hoverboard and obstacles
+   - Added lane-aware obstacle positioning to match the 3-lane system
+   - Optimized collision checks for better performance
+   - Ensured accurate detection timing for responsive gameplay
+   - Added proper obstacle cleanup when they pass the player
+
+3. **Game Over Experience**:
+   - Created stylish game over screen with cyberpunk aesthetics
+   - Displays final distance and score (distance + points from avoided obstacles)
+   - Shows high score that persists between sessions using localStorage
+   - Added "Play Again" button with proper hover effects
+   - Implemented clean game state transitions
+
+4. **Scoring System**:
+   - Added points for successfully avoiding obstacles (10 points each)
+   - Combined distance and obstacle points for final score
+   - Implemented high score tracking with persistent storage
+   - Displays score prominently on game over screen
+   - Shows high score on start screen when available
+
+5. **Visual Enhancements**:
+   - Added glowing effects to obstacles to match cyberpunk theme
+   - Improved UI styling with consistent cyberpunk color scheme
+   - Enhanced button hover effects for better feedback
+   - Added game control instructions on start screen
+   - Ensured consistent visual language across all UI elements
+
+6. **Technical Improvements**:
+   - Implemented object pooling for better performance
+   - Added robust state management for game states
+   - Improved collision detection accuracy
+   - Ensured proper cleanup of game resources
+   - Added responsive feedback on obstacle collisions
+
+## Performance Optimizations and Obstacle Improvements
+
+1. **Obstacle Visual Optimization**:
+   - Redesigned obstacles as glowing cyberpunk walls for better visual clarity
+   - Simplified geometry to improve performance and reduce lag when spawning
+   - Removed expensive point lights in favor of emissive materials
+   - Added grid-like patterns to walls for authentic cyberpunk aesthetic
+   - Created thinner, wider obstacles that appear more like barriers/walls
+   - Used MeshBasicMaterial instead of MeshStandardMaterial for better performance
+
+2. **Spawning System Improvements**:
+   - Enhanced obstacle spawning logic to ensure proper distribution across all three lanes
+   - Implemented distance-based spawn timing adjustment for progressive difficulty
+   - Increased initial spawn delay to give player time to prepare
+   - Modified obstacle pool management for better memory usage
+   - Ensured obstacles spawn far enough away to avoid pop-in visibility issues
+   - Improved obstacle reuse system for better memory management
+   - Added proper obstacle cleanup for better memory management
+
+3. **Performance Enhancements**:
+   - Optimized collision detection to only check nearby obstacles
+   - Reduced number of simultaneously updated objects for better performance
+   - Prioritized updating obstacles closer to the player
+   - Removed unnecessary animations (rotation) from obstacles
+   - Limited maximum number of visible obstacles to maintain frame rate
+   - Implemented more efficient bounding box updates
+   - Sorted obstacles by proximity for more efficient processing
+   - Reduced complexity of obstacle geometry and materials
+
+## Visual and Performance Refinements
+
+1. **Z-Fighting and Flickering Resolution**:
+   - Fixed flickering issues in obstacle walls by implementing proper z-spacing
+   - Added renderOrder properties to control precise drawing sequence of overlapping elements
+   - Configured proper depth buffer handling for transparent materials
+   - Optimized material settings with correct transparency and depth parameters
+   - Restructured wall elements to prevent visual artifacts in overlapping geometry
+   - Improved z-index and layer separation between edge frames and grid lines
+
+2. **Collision and Gameplay Adjustments**:
+   - Enhanced lane selection algorithm to prevent obstacles from spawning too close to each other
+   - Optimized obstacle bounding box updates to only occur when near the player
+   - Adjusted obstacle spawning distance for better gradual appearance
+   - Increased obstacle spawn spacing for better gameplay rhythm
+   - Improved lane distribution logic to avoid repetitive patterns
+   - Implemented smarter obstacle placement to ensure fair challenge across all lanes
