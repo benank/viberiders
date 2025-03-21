@@ -299,3 +299,63 @@ Each component can be developed, tested, and optimized independently, making fut
    - Increased obstacle spawn spacing for better gameplay rhythm
    - Improved lane distribution logic to avoid repetitive patterns
    - Implemented smarter obstacle placement to ensure fair challenge across all lanes
+
+## Crystal Collection System and Enhanced Scoring
+
+1. **Collectible Crystals**:
+   - Added glowing, diamond-shaped crystals that spawn randomly across the three lanes
+   - Designed crystals with a distinct teal/cyan color scheme to differentiate from obstacles
+   - Implemented smooth rotation animations to make crystals visually appealing
+   - Created proper collision detection to collect crystals when the hoverboard touches them
+   - Optimized crystal rendering with low-poly geometry and efficient materials
+   - Incorporated small point lights to give crystals an inner glow effect
+
+2. **Spawning Mechanics**:
+   - Implemented balanced spawn timing separate from obstacles
+   - Created intelligent lane distribution to avoid placing crystals in the same lane as obstacles
+   - Designed progressive spawn rate that increases with game difficulty
+   - Utilized object pooling for better performance when spawning crystals
+   - Implemented proper cleanup for crystals that pass the player
+   - Balanced spawn rates to ensure a fun but challenging collection experience
+
+3. **UI and Scoring Integration**:
+   - Added crystal counter to the gameplay UI with a distinct visual style
+   - Implemented 💎 emoji and green color scheme for crystal-related UI elements
+   - Updated the game over screen to show total crystals collected
+   - Enhanced scoring system to factor in crystal collection (50 points per crystal)
+   - Preserved crystal count in game state for accurate score calculation
+   - Made crystal display visually cohesive with the existing cyberpunk aesthetic
+
+4. **Technical Implementation**:
+   - Created a dedicated Crystal class with proper composition and inheritance
+   - Added crystal state management to the game store
+   - Integrated crystals into the scene update lifecycle
+   - Implemented optimized collision detection for crystals
+   - Added proper memory management and disposal for crystal resources
+   - Ensured crystals work correctly with the game state system
+
+## Dynamic Speed and Progressive Difficulty
+
+1. **Enhanced Speed Acceleration**:
+   - Implemented more aggressive speed ramping to make the game progressively more challenging
+   - Increased maximum speed cap from 18 to 30 units for an exhilarating endgame experience
+   - Reduced acceleration factor from 300 to 200 for faster speed growth
+   - Modified distance calculation to directly tie to speed for faster score accumulation
+   - Created a speed feedback loop where faster speeds lead to higher distance traveled
+   - Added dynamic difficulty scaling based on time spent playing
+
+2. **Improved Speed Management**:
+   - Implemented a centralized speed control system in the CyberpunkScene
+   - Decoupled hoverboard acceleration from the HoverBoard class for better control
+   - Added a setSpeed method to dynamically update hoverboard speed from the scene controller
+   - Ensured consistent speed application across all moving elements (obstacles, crystals, grid)
+   - Fine-tuned speed parameters for optimal gameplay progression
+   - Balanced increasing difficulty with player reaction time
+
+3. **Score and High Score System**:
+   - Enhanced persistent high score storage using localStorage
+   - Ensured proper high score updates at game over
+   - Added crystal count to the high score calculation (50 points per crystal)
+   - Fixed reset functionality to properly clear crystal count between games
+   - Implemented proper state management for all game variables
+   - Created a balanced scoring system that rewards both distance and collectibles

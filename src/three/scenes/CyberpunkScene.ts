@@ -5,7 +5,8 @@ import { Mountains } from '../objects/Mountains';
 import { Sun } from '../objects/Sun';
 import { HoverBoard } from '../objects/HoverBoard';
 import { Obstacle } from '../objects/Obstacle';
-import { gameStateAtom, distanceAtom, GameState, scoreAtom } from '../store/gameStore';
+import { Crystal } from '../objects/Crystal';
+import { gameStateAtom, distanceAtom, GameState, scoreAtom, crystalCountAtom } from '../store/gameStore';
 import { getDefaultStore } from 'jotai';
 
 /**
@@ -18,10 +19,16 @@ export class CyberpunkScene extends Scene {
   private hoverboard: HoverBoard;
   private obstacles: Obstacle[] = [];
   private obstaclePool: Obstacle[] = [];
+  private crystals: Crystal[] = [];
+  private crystalPool: Crystal[] = [];
   private nextObstacleTime: number = 0;
+  private nextCrystalTime: number = 0;
   private minObstacleSpacing: number = 3.0; // Increased minimum spacing for better gameplay
   private maxObstacleSpacing: number = 6.0; // Increased maximum spacing for better gameplay
+  private minCrystalSpacing: number = 2.0;
+  private maxCrystalSpacing: number = 4.0;
   private obstacleSpawningActive: boolean = false;
+  private crystalSpawningActive: boolean = false;
   private hoverboardBox: THREE.Box3 = new THREE.Box3();
   private gameTime: number = 0;
   private keyStates: { [key: string]: boolean } = {};
@@ -115,6 +122,9 @@ export class CyberpunkScene extends Scene {
     
     // Initialize obstacle pool
     this.initializeObstaclePool();
+    
+    // Initialize crystal pool
+    this.initializeCrystalPool();
   }
   
   /**
@@ -134,6 +144,22 @@ export class CyberpunkScene extends Scene {
   }
   
   /**
+   * Initialize a pool of reusable crystals
+   */
+  private initializeCrystalPool(): void {
+    // Create a pool of crystals that we can reuse
+    const poolSize = 8; // Pool size for crystals
+    
+    for (let i = 0; i < poolSize; i++) {
+      // Create crystals but keep them far away and inactive initially
+      const crystal = new Crystal(1, -200);
+      this.crystalPool.push(crystal);
+      this.scene.add(crystal.getMesh());
+      crystal.setActive(false); // Initially inactive
+    }
+  }
+  
+  /**
    * Get an obstacle from the pool
    */
   private getObstacleFromPool(): Obstacle | null {
@@ -143,6 +169,18 @@ export class CyberpunkScene extends Scene {
       }
     }
     return null; // No available obstacles in the pool
+  }
+  
+  /**
+   * Get a crystal from the pool
+   */
+  private getCrystalFromPool(): Crystal | null {
+    for (const crystal of this.crystalPool) {
+      if (!crystal.isCrystalActive()) {
+        return crystal;
+      }
+    }
+    return null; // No available crystals in the pool
   }
   
   /**
@@ -195,6 +233,56 @@ export class CyberpunkScene extends Scene {
   }
   
   /**
+   * Spawn a new crystal
+   */
+  private spawnCrystal(): void {
+    if (!this.crystalSpawningActive) return;
+    
+    const crystal = this.getCrystalFromPool();
+    if (!crystal) return; // No available crystals in the pool
+    
+    // Choose a random lane (0, 1, or 2)
+    let lane = Math.floor(Math.random() * 3);
+    
+    // Check if there's already a crystal or obstacle in this lane that's too close
+    const tooClose = [...this.crystals, ...this.obstacles].some(existing => {
+      const existingZ = existing.getMesh().position.z;
+      const existingLane = existing instanceof Crystal 
+        ? existing.getLane() 
+        : (existing as Obstacle).getLane();
+      
+      // Don't spawn in the same lane if there's already something within 20 units
+      return (existingLane === lane) && (existingZ < -80) && (existingZ > -140);
+    });
+    
+    // If too close, try a different lane
+    if (tooClose) {
+      // Try a different lane (cyclically)
+      lane = (lane + 1 + Math.floor(Math.random() * 2)) % 3;
+    }
+    
+    // Ensure crystals are spawned far enough away to be invisible initially
+    const startZ = -130;
+    
+    // Initialize the crystal
+    crystal.reset(lane, startZ);
+    
+    // Add to active crystals list
+    this.crystals.push(crystal);
+    
+    // Set time for next crystal - adjust timing based on current speed
+    const distance = this.hoverboard.getDistance();
+    const speedFactor = Math.min(distance / 1000, 1); // Max speedup factor of 1
+    
+    // As the game progresses, decrease the crystal spacing
+    const adjustedMinSpacing = Math.max(this.minCrystalSpacing - speedFactor, 1.0);
+    const adjustedMaxSpacing = Math.max(this.maxCrystalSpacing - speedFactor, 2.0);
+    
+    this.nextCrystalTime = this.gameTime + adjustedMinSpacing + 
+                          Math.random() * (adjustedMaxSpacing - adjustedMinSpacing);
+  }
+  
+  /**
    * Update obstacles
    */
   private updateObstacles(deltaTime: number, speed: number): void {
@@ -234,7 +322,42 @@ export class CyberpunkScene extends Scene {
   }
   
   /**
-   * Check for collisions between hoverboard and obstacles
+   * Update crystals
+   */
+  private updateCrystals(deltaTime: number, speed: number): void {
+    // Check if it's time to spawn a new crystal
+    if (this.gameTime >= this.nextCrystalTime) {
+      this.spawnCrystal();
+    }
+    
+    // Update all active crystals
+    const maxVisibleCrystals = 6; 
+    
+    // Sort crystals by z-position (closest first) to prioritize updating the closest ones
+    this.crystals.sort((a, b) => b.getMesh().position.z - a.getMesh().position.z);
+    
+    // Only update the closest crystals
+    const crystalsToUpdate = Math.min(this.crystals.length, maxVisibleCrystals);
+    
+    for (let i = 0; i < crystalsToUpdate; i++) {
+      this.crystals[i].update(deltaTime, speed);
+    }
+    
+    // Check for crystals that are past the player
+    for (let i = this.crystals.length - 1; i >= 0; i--) {
+      const crystal = this.crystals[i];
+      
+      // Check if crystal is past the player
+      if (crystal.isPastPlayer()) {
+        // Remove from active crystals
+        this.crystals.splice(i, 1);
+        crystal.setActive(false);
+      }
+    }
+  }
+  
+  /**
+   * Check for collisions between hoverboard and obstacles/crystals
    */
   private checkCollisions(): void {
     if (this.gameState !== 'playing') return;
@@ -243,8 +366,7 @@ export class CyberpunkScene extends Scene {
     const hoverboardMesh = this.hoverboard.getMesh();
     this.hoverboardBox.setFromObject(hoverboardMesh);
     
-    // Only check collisions with obstacles that are close to the player
-    // Sort obstacles by proximity to player for more efficient checks
+    // Check collisions with obstacles
     const closeObstacles = this.obstacles.filter(obstacle => {
       const obstacleZ = obstacle.getMesh().position.z;
       // Only check obstacles within collision range (between -5 and 8)
@@ -258,8 +380,28 @@ export class CyberpunkScene extends Scene {
         
         if (this.hoverboardBox.intersectsBox(obstacleBox)) {
           // Collision detected!
-          this.handleCollision();
+          this.handleObstacleCollision();
           break;
+        }
+      }
+    }
+    
+    // Check collisions with crystals
+    const closeCrystals = this.crystals.filter(crystal => {
+      const crystalZ = crystal.getMesh().position.z;
+      // Only check crystals within collision range (between -5 and 8)
+      return crystalZ > -5 && crystalZ < 8;
+    });
+    
+    // Check collision with each close crystal
+    for (let i = closeCrystals.length - 1; i >= 0; i--) {
+      const crystal = closeCrystals[i];
+      if (crystal.isCrystalActive()) {
+        const crystalBox = crystal.getBoundingBox();
+        
+        if (this.hoverboardBox.intersectsBox(crystalBox)) {
+          // Crystal collected!
+          this.handleCrystalCollection(crystal);
         }
       }
     }
@@ -268,15 +410,37 @@ export class CyberpunkScene extends Scene {
   /**
    * Handle collision with obstacle
    */
-  private handleCollision(): void {
+  private handleObstacleCollision(): void {
     // Set game state to game over
     this.store.set(gameStateAtom, 'gameOver');
     
-    // Stop obstacle spawning
+    // Stop obstacle and crystal spawning
     this.obstacleSpawningActive = false;
+    this.crystalSpawningActive = false;
     
     // Visual/audio feedback could be added here
     console.log('Collision! Game Over');
+  }
+  
+  /**
+   * Handle collecting a crystal
+   */
+  private handleCrystalCollection(crystal: Crystal): void {
+    // Increase crystal count
+    const currentCrystalCount = this.store.get(crystalCountAtom);
+    this.store.set(crystalCountAtom, currentCrystalCount + 1);
+    
+    // Deactivate the crystal
+    crystal.setActive(false);
+    
+    // Remove from active crystals list
+    const index = this.crystals.indexOf(crystal);
+    if (index !== -1) {
+      this.crystals.splice(index, 1);
+    }
+    
+    // Visual/audio feedback could be added here
+    console.log('Crystal collected!');
   }
   
   /**
@@ -342,7 +506,14 @@ export class CyberpunkScene extends Scene {
     
     // Get the speed from hoverboard
     const distance = this.hoverboard.getDistance();
-    const speed = 12 + Math.min(distance / 300, 18); // Increased base speed and max speed
+    // Make speed increase more aggressively over time
+    const baseSpeed = 12;
+    const maxAdditionalSpeed = 30; // Increased max speed (was 18)
+    const accelerationFactor = 200; // Smaller number = faster acceleration (was 300)
+    const speed = baseSpeed + Math.min(distance / accelerationFactor, maxAdditionalSpeed);
+    
+    // Store speed in the hoverboard for distance calculation
+    this.hoverboard.setSpeed(speed);
     
     // Move the grid to create illusion of movement
     const gridMesh = this.grid.getMesh();
@@ -357,6 +528,9 @@ export class CyberpunkScene extends Scene {
     
     // Update obstacles with the same speed
     this.updateObstacles(deltaTime, speed);
+    
+    // Update crystals with the same speed
+    this.updateCrystals(deltaTime, speed);
     
     // Mountains and sun remain stationary - no movement code for these objects
   }
@@ -421,7 +595,9 @@ export class CyberpunkScene extends Scene {
       // Reset game variables
       this.gameTime = 0;
       this.nextObstacleTime = 4.0; // Start first obstacle after 4 seconds for better player ramp-up
+      this.nextCrystalTime = 2.0; // Start first crystal after 2 seconds
       this.obstacleSpawningActive = true;
+      this.crystalSpawningActive = true;
       
       // Clear existing obstacles
       for (const obstacle of this.obstacles) {
@@ -429,9 +605,19 @@ export class CyberpunkScene extends Scene {
       }
       this.obstacles = [];
       
+      // Clear existing crystals
+      for (const crystal of this.crystals) {
+        crystal.setActive(false);
+      }
+      this.crystals = [];
+      
       // Make sure all pool objects are properly hidden
       for (const obstacle of this.obstaclePool) {
         obstacle.setActive(false);
+      }
+      
+      for (const crystal of this.crystalPool) {
+        crystal.setActive(false);
       }
       
       // Start hoverboard movement
@@ -440,8 +626,9 @@ export class CyberpunkScene extends Scene {
       // Stop hoverboard movement
       this.hoverboard.stopMoving();
       
-      // Stop obstacle spawning
+      // Stop obstacle and crystal spawning
       this.obstacleSpawningActive = false;
+      this.crystalSpawningActive = false;
     }
   }
   
@@ -449,15 +636,24 @@ export class CyberpunkScene extends Scene {
    * Reset the scene for a new game
    */
   public resetGame(): void {
-    // Reset all obstacles to inactive
+    // Reset grid position
+    const gridMesh = this.grid.getMesh();
+    gridMesh.position.z = this.gridInitialZ;
+    
+    // Reset hoverboard
+    this.hoverboard.reset();
+    
+    // Clear obstacles
     for (const obstacle of this.obstacles) {
       obstacle.setActive(false);
     }
     this.obstacles = [];
     
-    // Reset game variables
-    this.gameTime = 0;
-    this.nextObstacleTime = 0;
+    // Clear crystals
+    for (const crystal of this.crystals) {
+      crystal.setActive(false);
+    }
+    this.crystals = [];
   }
   
   /**
@@ -483,6 +679,11 @@ export class CyberpunkScene extends Scene {
     // Dispose obstacles
     for (const obstacle of this.obstaclePool) {
       obstacle.dispose();
+    }
+    
+    // Dispose crystals
+    for (const crystal of this.crystalPool) {
+      crystal.dispose();
     }
   }
 } 

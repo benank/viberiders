@@ -11,6 +11,7 @@ export interface GameStore {
   score: number;
   highScore: number;
   speed: number;
+  crystalCount: number;
 }
 
 // Initial store values
@@ -20,6 +21,7 @@ const initialStore: GameStore = {
   score: 0,
   highScore: 0,
   speed: 5,
+  crystalCount: 0,
 };
 
 // Store atoms
@@ -28,12 +30,14 @@ export const distanceAtom = atom<number>(initialStore.distance);
 export const scoreAtom = atom<number>(initialStore.score);
 export const highScoreAtom = atom<number>(initialStore.highScore);
 export const speedAtom = atom<number>(initialStore.speed);
+export const crystalCountAtom = atom<number>(initialStore.crystalCount);
 
 // Derived atom for calculating the final score
 export const finalScoreAtom = atom<number>((get) => {
   const distance = get(distanceAtom);
   const score = get(scoreAtom);
-  return Math.floor(distance) + score;
+  const crystals = get(crystalCountAtom);
+  return Math.floor(distance) + score + (crystals * 50); // Each crystal is worth 50 points
 });
 
 // High score atom that persists the highest score
@@ -75,6 +79,7 @@ export const gameStoreAtom = atom<GameStore>(
     score: get(scoreAtom),
     highScore: get(highScoreAtom),
     speed: get(speedAtom),
+    crystalCount: get(crystalCountAtom),
   }),
   (_, set, update: Partial<GameStore>) => {
     if (update.gameState !== undefined) set(gameStateAtom, update.gameState);
@@ -82,6 +87,7 @@ export const gameStoreAtom = atom<GameStore>(
     if (update.score !== undefined) set(scoreAtom, update.score);
     if (update.highScore !== undefined) set(highScoreAtom, update.highScore);
     if (update.speed !== undefined) set(speedAtom, update.speed);
+    if (update.crystalCount !== undefined) set(crystalCountAtom, update.crystalCount);
   }
 );
 
@@ -100,6 +106,7 @@ export const resetGame = (set: (update: Partial<GameStore>) => void) => {
     distance: 0,
     score: 0,
     speed: 5,
+    crystalCount: 0,
   });
 };
 
@@ -109,6 +116,7 @@ export const startGame = () => {
   store.set(gameStateAtom, 'playing');
   store.set(distanceAtom, 0);
   store.set(scoreAtom, 0);
+  store.set(crystalCountAtom, 0);
 };
 
 // Helper function to handle game over
@@ -131,4 +139,5 @@ export const restartGame = () => {
   store.set(gameStateAtom, 'idle');
   store.set(distanceAtom, 0);
   store.set(scoreAtom, 0);
+  store.set(crystalCountAtom, 0);
 }; 

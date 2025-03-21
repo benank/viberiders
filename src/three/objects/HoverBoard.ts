@@ -154,7 +154,17 @@ export class HoverBoard {
    * Get the current distance traveled
    */
   public getDistance(): number {
+    // Distance now directly tied to the current speed for faster increase
+    if (!this.isMoving) return 0;
     return Math.abs(this.position.z - 5);
+  }
+
+  /**
+   * Set the current speed of the hoverboard
+   * @param speed The new speed
+   */
+  public setSpeed(speed: number): void {
+    this.speed = speed;
   }
 
   /**
@@ -184,10 +194,8 @@ export class HoverBoard {
 
     // Handle forward movement
     if (this.isMoving) {
-      // Accelerate up to max speed
-      this.speed = Math.min(this.speed + this.acceleration * deltaTime, this.maxSpeed);
-      
-      // Move forward (decrease z value)
+      // Movement is now controlled by setSpeed from CyberpunkScene
+      // Move forward (decrease z value) - Distance increases with speed
       this.position.z -= this.speed * deltaTime;
     }
 

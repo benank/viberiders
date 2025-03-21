@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import './App.css'
 import { initCyberpunkGrid, cleanupCyberpunkGrid } from './three/init'
 import { useAtom } from 'jotai'
-import { gameStateAtom, distanceAtom, finalScoreAtom, highScoreAtom, restartGame } from './three/store/gameStore'
+import { gameStateAtom, distanceAtom, finalScoreAtom, highScoreAtom, restartGame, crystalCountAtom } from './three/store/gameStore'
 
 function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -10,6 +10,7 @@ function App() {
   const [distance] = useAtom(distanceAtom);
   const [finalScore] = useAtom(finalScoreAtom);
   const [highScore] = useAtom(highScoreAtom);
+  const [crystalCount] = useAtom(crystalCountAtom);
 
   const handleStartGame = () => {
     setGameState('playing');
@@ -243,9 +244,20 @@ function App() {
           textShadow: '0 0 8px #00ffff',
           fontSize: '2rem',
           fontWeight: 'bold',
-          fontFamily: 'monospace'
+          fontFamily: 'monospace',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
         }}>
-          {distance.toString().padStart(6, '0')} m
+          <div>{distance.toString().padStart(6, '0')} m</div>
+          <div style={{ 
+            color: '#00ffaa', 
+            textShadow: '0 0 8px #00ffaa',
+            fontSize: '1.5rem',
+            marginTop: '0.5rem'
+          }}>
+            💎 {crystalCount}
+          </div>
         </div>
       )}
       
@@ -284,12 +296,12 @@ function App() {
             Distance: <span style={{ fontWeight: 'bold' }}>{distance.toString().padStart(6, '0')} m</span>
           </div>
           
-          <div style={{ marginBottom: '1.5rem', color: '#00ffff', fontSize: '1.5rem' }}>
-            Final Score: <span style={{ fontWeight: 'bold' }}>{finalScore}</span>
+          <div style={{ marginBottom: '0.5rem', color: '#00ffaa', fontSize: '1.5rem' }}>
+            Crystals: <span style={{ fontWeight: 'bold' }}>{crystalCount} 💎</span>
           </div>
           
-          <div style={{ marginBottom: '2rem', color: '#ffff00', fontSize: '1.2rem' }}>
-            High Score: <span style={{ fontWeight: 'bold' }}>{highScore}</span>
+          <div style={{ marginBottom: '1.5rem', color: '#00ffff', fontSize: '1.5rem' }}>
+            Final Score: <span style={{ fontWeight: 'bold' }}>{finalScore}</span>
           </div>
           
           <button 
