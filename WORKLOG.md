@@ -60,18 +60,23 @@ The application now includes gameplay functionality with the following features:
    - When clicked, the game UI transitions to gameplay mode
    - Hides title and start button, showing only the distance counter
 
-2. **Temple Run Style 3-Lane System**:
+2. **Authentic Temple Run Style 3-Lane System**:
    - Simplified lane mechanics with three fixed positions (left, center, right)
    - Visual lane markers to indicate the three lanes
    - Left/Right arrow keys and A/D keys for switching lanes
+   - Movement cooldown to prevent accidental rapid lane changes
+   - Fixed lane-change logic to prevent lane-skipping issues
    - Smooth transitions between lanes with animation
    - Board tilts when turning for visual effect
+   - Increased lane movement responsiveness
 
 3. **Continuous Forward Movement**:
+   - Faster base movement speed for more exciting gameplay
    - Hoverboard stays in a fixed position relative to the camera
    - The scene (grid, mountains) moves toward the player creating an illusion of forward movement
    - Speed gradually increases as the player advances
    - Parallax effect with different movement speeds for distant objects
+   - Proper depth management to prevent scene elements from intersecting the player
 
 4. **Distance Counter**:
    - Real-time distance meter shown during gameplay
@@ -85,9 +90,12 @@ The application now includes gameplay functionality with the following features:
    - Enables future expansion for more game elements
 
 6. **Visual Feedback**:
-   - Lighting and glow effects enhance the gameplay experience
+   - Enhanced lighting and glow effects for better gameplay experience
    - Scene elements loop/reset when they move past certain thresholds
    - Smooth acceleration as the game progresses
+   - Increased visual tilt feedback during lane changes
+   - Longer lane markers for better visibility
+   - Optimized scene reset mechanics
 
 ## Key Improvements
 
@@ -98,6 +106,7 @@ The application now includes gameplay functionality with the following features:
    - Separated grid lines from the floor surface
    - Fixed perspective with proper orientation
    - Implemented continuous movement for Temple Run style mechanics
+   - Expanded grid size for smoother infinite scrolling
 
 3. **Mountains Optimization**:
    - Reduced mountain heights for better visual balance
@@ -105,13 +114,18 @@ The application now includes gameplay functionality with the following features:
    - Adjusted geometry and materials for better performance
    - Implemented proper fog integration
    - Added parallax scrolling effect
+   - Fixed mountains positioning to prevent player intersection
+   - Improved scaling for better scene composition
 
 4. **Hoverboard Enhancements**:
    - Improved hover effect with consistent height
    - Added glow underneath for visual effect
    - Ensured correct positioning above the grid
    - Simplified controls to 3-lane system like Temple Run
-   - Added visual feedback during lane changes
+   - Fixed lane movement logic to prevent position skipping bugs
+   - Added cooldown between lane changes for more controlled movement
+   - Increased movement speed and responsiveness
+   - Enhanced visual feedback during lane changes
    - Implemented physics-based motion
 
 5. **Lighting Improvements**:
@@ -119,6 +133,7 @@ The application now includes gameplay functionality with the following features:
    - Enhanced ambient and directional lighting
    - Added ground glow for cyberpunk effect
    - Balanced light intensities for better visual appeal
+   - Extended fog distance for more immersive visuals
 
 6. **General Enhancements**:
    - Improved resource disposal for better memory management
@@ -128,6 +143,7 @@ The application now includes gameplay functionality with the following features:
    - Implemented game controls and state management
    - Added UI components for game interaction
    - Created virtual camera mechanics for infinite scrolling
+   - Fixed movement bugs and improved responsiveness
 
 ## Future Development
 

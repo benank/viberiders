@@ -18,15 +18,17 @@ export class HoverBoard {
   private targetPosition = { x: 0, z: 5 };
   private velocity = { x: 0, z: 0 };
   private speed = 0; // Forward speed
-  private maxSpeed = 20; // Maximum forward speed
-  private acceleration = 0.05; // Speed increase per second
-  private lateralSpeed = 5; // Side-to-side movement speed
+  private maxSpeed = 30; // Maximum forward speed
+  private acceleration = 0.1; // Speed increase per second
+  private lateralSpeed = 12; // Side-to-side movement speed - increased for responsiveness
   private laneWidth = 2.5; // Width of a lane
   private isMoving = false;
   
   // Lane system
   private lanes = [-this.laneWidth, 0, this.laneWidth]; // Left, Center, Right
   private currentLane = 1; // Start in center lane (index 1)
+  private moveCooldown = 0; // Cooldown to prevent rapid lane changes
+  private moveCooldownDuration = 0.2; // Duration in seconds
 
   constructor() {
     this.mesh = new THREE.Group();
@@ -108,10 +110,12 @@ export class HoverBoard {
    */
   public startMoving(): void {
     this.isMoving = true;
-    this.speed = 8; // Initial speed
+    this.speed = 12; // Initial speed - increased for faster gameplay
     this.currentLane = 1; // Reset to center lane
     this.targetPosition.x = this.lanes[this.currentLane];
+    this.position.x = this.lanes[this.currentLane]; // Set position immediately to prevent sliding at start
     this.position.z = 5; // Reset z position
+    this.moveCooldown = 0; // Reset cooldown
   }
 
   /**
@@ -124,22 +128,26 @@ export class HoverBoard {
 
   /**
    * Move the hoverboard to the left
+   * In Temple Run style, this should never wrap around
    */
   public moveLeft(): void {
-    if (!this.isMoving || this.currentLane === 0) return;
+    if (!this.isMoving || this.currentLane === 0 || this.moveCooldown > 0) return;
     
     this.currentLane--;
     this.targetPosition.x = this.lanes[this.currentLane];
+    this.moveCooldown = this.moveCooldownDuration; // Set cooldown to prevent rapid lane changes
   }
 
   /**
    * Move the hoverboard to the right
+   * In Temple Run style, this should never wrap around
    */
   public moveRight(): void {
-    if (!this.isMoving || this.currentLane === 2) return;
+    if (!this.isMoving || this.currentLane === 2 || this.moveCooldown > 0) return;
     
     this.currentLane++;
     this.targetPosition.x = this.lanes[this.currentLane];
+    this.moveCooldown = this.moveCooldownDuration; // Set cooldown to prevent rapid lane changes
   }
 
   /**
@@ -154,6 +162,11 @@ export class HoverBoard {
    * @param deltaTime Time since last frame
    */
   public update(deltaTime: number): void {
+    // Update move cooldown
+    if (this.moveCooldown > 0) {
+      this.moveCooldown -= deltaTime;
+    }
+    
     // Update time uniform for shader animations
     const elapsedTime = this.clock.getElapsedTime();
     const tilt = Math.sin(elapsedTime * 1.2) * 0.01;
@@ -189,7 +202,7 @@ export class HoverBoard {
     this.mesh.position.z = 5; // Keep the hoverboard at a fixed z position relative to camera
     
     // Calculate board tilt based on lateral movement
-    const lateralTilt = -Math.sign(lateralDiff) * Math.min(Math.abs(lateralDiff) * 0.2, 0.2);
+    const lateralTilt = -Math.sign(lateralDiff) * Math.min(Math.abs(lateralDiff) * 0.3, 0.3); // Increased tilt for better visual feedback
     this.mesh.rotation.z = lateralTilt;
 
     // Subtle floating animation - adjust to hover above the grid

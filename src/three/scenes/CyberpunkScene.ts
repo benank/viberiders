@@ -23,21 +23,21 @@ export class CyberpunkScene extends Scene {
   
   // Scene positions
   private gridInitialZ = 0;
-  private mountainsInitialZ = -80;
-  private sunInitialZ = -60;
+  private mountainsInitialZ = -100; // Pushed mountains further back
+  private sunInitialZ = -80; // Pushed sun further back
   
   constructor() {
     super();
     
     // Initialize scene properties
-    this.scene.fog = new THREE.Fog(0x000000, 25, 140); // Adjusted fog for better visibility
+    this.scene.fog = new THREE.Fog(0x000000, 25, 160); // Extended fog distance
     
     // Initialize camera
     this.camera.position.set(0, 3, 10); // Slightly further back for better perspective
     this.camera.rotation.x = -0.3; // Adjusted angle to look at board and grid
     
     // Create scene objects
-    this.grid = new Grid(200, 100); // Larger grid for more immersive environment
+    this.grid = new Grid(300, 120); // Larger grid for more immersive environment
     this.mountains = new Mountains();
     this.sun = new Sun();
     this.hoverboard = new HoverBoard();
@@ -68,13 +68,15 @@ export class CyberpunkScene extends Scene {
     // Add mountains to scene - position them far back and lower
     const mountainsMesh = this.mountains.getMesh();
     mountainsMesh.position.z = this.mountainsInitialZ; // Keep mountains far back
-    mountainsMesh.position.y = -12; // Lower position further to reduce visibility under the grid
+    mountainsMesh.position.y = -15; // Lower position further to reduce visibility under the grid
+    mountainsMesh.scale.set(1.5, 1.2, 1.5); // Scale mountains for better perspective
     this.scene.add(mountainsMesh);
     
     // Adjust sun position for better composition
     const sunMesh = this.sun.getMesh();
     sunMesh.position.z = this.sunInitialZ; // Move back with mountains
-    sunMesh.position.y = 6; // Higher in the sky
+    sunMesh.position.y = 8; // Higher in the sky
+    sunMesh.scale.set(1.3, 1.3, 1); // Scale sun for better visibility
     this.scene.add(sunMesh);
     
     // Set up hoverboard - let it hover above the grid naturally
@@ -117,7 +119,7 @@ export class CyberpunkScene extends Scene {
     // Create a simple lane marker for each lane
     lanePositions.forEach(xPos => {
       // Create a glowing line to represent the lane
-      const markerGeometry = new THREE.BoxGeometry(0.2, 0.05, 40);
+      const markerGeometry = new THREE.BoxGeometry(0.2, 0.05, 60); // Made markers longer
       const markerMaterial = new THREE.MeshBasicMaterial({
         color: 0x00ffff,
         transparent: true,
@@ -170,30 +172,42 @@ export class CyberpunkScene extends Scene {
     
     // Get the speed from hoverboard
     const distance = this.hoverboard.getDistance();
-    const speed = 8 + Math.min(distance / 500, 12); // Gradually increase speed
+    const speed = 12 + Math.min(distance / 300, 18); // Increased base speed and max speed
     
     // Move the grid to create illusion of movement
     const gridMesh = this.grid.getMesh();
     
     // Reset grid position if it's gone too far
-    if (gridMesh.position.z > 20) {
+    if (gridMesh.position.z > 30) {
       gridMesh.position.z = this.gridInitialZ;
     }
     
     // Move grid forward
     gridMesh.position.z += speed * deltaTime;
     
-    // Move mountains slightly for parallax effect
-    const mountainsSpeed = speed * 0.2;
+    // Move mountains slightly for parallax effect - make sure they never come too close
+    const mountainsSpeed = speed * 0.15; // Reduced relative speed for better parallax
     const mountainsMesh = this.mountains.getMesh();
     
-    // Reset mountains position if they've gone too far
+    // Reset mountains position if they've gone too far (but never let them come closer than -40)
     if (mountainsMesh.position.z > -40) {
       mountainsMesh.position.z = this.mountainsInitialZ;
+    } else {
+      // Move mountains forward with parallax effect
+      mountainsMesh.position.z += mountainsSpeed * deltaTime;
     }
     
-    // Move mountains forward
-    mountainsMesh.position.z += mountainsSpeed * deltaTime;
+    // Move sun with a very slight parallax
+    const sunSpeed = speed * 0.05; // Very slight movement for subtle effect
+    const sunMesh = this.sun.getMesh();
+    
+    // Reset sun position if it's gone too far (but keep it far away)
+    if (sunMesh.position.z > -40) {
+      sunMesh.position.z = this.sunInitialZ;
+    } else {
+      // Move sun forward with minimal parallax effect
+      sunMesh.position.z += sunSpeed * deltaTime;
+    }
   }
   
   /**
