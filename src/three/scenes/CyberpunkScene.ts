@@ -23,14 +23,14 @@ export class CyberpunkScene extends Scene {
   
   // Scene positions
   private gridInitialZ = 0;
-  private mountainsInitialZ = -100; // Pushed mountains further back
-  private sunInitialZ = -80; // Pushed sun further back
+  private mountainsInitialZ = -138; // Slightly in front of the sun
+  private sunInitialZ = -140; // Far back as a background element
   
   constructor() {
     super();
     
-    // Initialize scene properties
-    this.scene.fog = new THREE.Fog(0x000000, 25, 160); // Extended fog distance
+    // Initialize scene properties - increased fog distance to ensure mountains are visible
+    this.scene.fog = new THREE.Fog(0x000000, 30, 250);
     
     // Initialize camera
     this.camera.position.set(0, 3, 10); // Slightly further back for better perspective
@@ -60,24 +60,24 @@ export class CyberpunkScene extends Scene {
    * Initialize the scene
    */
   public initialize(): void {
+    // Add sun first as the background
+    const sunMesh = this.sun.getMesh();
+    sunMesh.position.z = this.sunInitialZ; // Far back as background
+    sunMesh.position.y = 15; // Higher in the sky to cover more background
+    sunMesh.scale.set(1.5, 1.5, 1); // Make it even larger to fill the background
+    this.scene.add(sunMesh);
+    
+    // Add mountains to scene - position them as silhouettes in front of the sun
+    const mountainsMesh = this.mountains.getMesh();
+    mountainsMesh.position.z = this.mountainsInitialZ; // Position in front of the sun
+    mountainsMesh.position.y = 0; // Positioned at the horizon line
+    mountainsMesh.scale.set(1.2, 1.5, 1.0); // Larger scale for better visibility
+    this.scene.add(mountainsMesh);
+    
     // Add grid to scene
     const gridMesh = this.grid.getMesh();
     gridMesh.position.z = this.gridInitialZ;
     this.scene.add(gridMesh);
-    
-    // Add mountains to scene - position them far back and lower
-    const mountainsMesh = this.mountains.getMesh();
-    mountainsMesh.position.z = this.mountainsInitialZ; // Keep mountains far back
-    mountainsMesh.position.y = -15; // Lower position further to reduce visibility under the grid
-    mountainsMesh.scale.set(1.5, 1.2, 1.5); // Scale mountains for better perspective
-    this.scene.add(mountainsMesh);
-    
-    // Adjust sun position for better composition
-    const sunMesh = this.sun.getMesh();
-    sunMesh.position.z = this.sunInitialZ; // Move back with mountains
-    sunMesh.position.y = 8; // Higher in the sky
-    sunMesh.scale.set(1.3, 1.3, 1); // Scale sun for better visibility
-    this.scene.add(sunMesh);
     
     // Set up hoverboard - let it hover above the grid naturally
     const hoverboardMesh = this.hoverboard.getMesh();
@@ -185,29 +185,7 @@ export class CyberpunkScene extends Scene {
     // Move grid forward
     gridMesh.position.z += speed * deltaTime;
     
-    // Move mountains slightly for parallax effect - make sure they never come too close
-    const mountainsSpeed = speed * 0.15; // Reduced relative speed for better parallax
-    const mountainsMesh = this.mountains.getMesh();
-    
-    // Reset mountains position if they've gone too far (but never let them come closer than -40)
-    if (mountainsMesh.position.z > -40) {
-      mountainsMesh.position.z = this.mountainsInitialZ;
-    } else {
-      // Move mountains forward with parallax effect
-      mountainsMesh.position.z += mountainsSpeed * deltaTime;
-    }
-    
-    // Move sun with a very slight parallax
-    const sunSpeed = speed * 0.05; // Very slight movement for subtle effect
-    const sunMesh = this.sun.getMesh();
-    
-    // Reset sun position if it's gone too far (but keep it far away)
-    if (sunMesh.position.z > -40) {
-      sunMesh.position.z = this.sunInitialZ;
-    } else {
-      // Move sun forward with minimal parallax effect
-      sunMesh.position.z += sunSpeed * deltaTime;
-    }
+    // Mountains and sun remain stationary - no movement code for these objects
   }
   
   /**

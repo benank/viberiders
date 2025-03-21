@@ -145,6 +145,54 @@ The application now includes gameplay functionality with the following features:
    - Created virtual camera mechanics for infinite scrolling
    - Fixed movement bugs and improved responsiveness
 
+## Recent Updates
+
+### Cyberpunk Skybox with Mountain Silhouettes
+
+1. **Enlarged Sun Background**:
+   - Dramatically increased the size of the pink gradient sun to cover the entire background
+   - Made the sun 4 times larger (200x100 units) to create a full skybox effect
+   - Positioned the sun at the far back of the scene (z = -140)
+   - Raised the sun higher in the background for better visibility
+   - Created an encompassing gradient effect that fills the visual field
+   - Enhanced the dramatic backdrop for the cyberpunk aesthetic
+
+2. **Enhanced Mountain Silhouettes**:
+   - Created prominent dark mountain silhouettes positioned in front of the pink sun
+   - Increased mountain height and width for better visibility against the background
+   - Used slightly brighter purple colors (0x330044, 0x220033) for improved contrast
+   - Added five distinct mountain ranges with varied sizes for a more interesting horizon
+   - Positioned silhouettes higher in the scene to ensure visibility at horizon line
+   - Scaled silhouettes up by 1.5x vertically to enhance their presence
+   - Added additional accent mountains in the foreground for depth
+
+3. **Improved Scene Layering**:
+   - Implemented proper visual scene layering from back to front:
+     - Large pink sun as the furthest background element
+     - Mountain silhouettes creating a horizon line
+     - Grid system as the interactive foreground
+   - Adjusted the render order to ensure correct element visibility
+   - Optimized scene composition with natural visual hierarchy
+   - Enhanced the overall cyberpunk aesthetic with dramatic backlighting effect
+   - Extended fog distance to ensure all background elements remain visible
+   - Fine-tuned z-positioning for perfect layering (sun at -140, mountains at -138)
+
+### Visual Background Improvements
+
+1. **Stationary Background Elements**:
+   - Modified mountains to remain completely stationary in the far background
+   - Positioned mountains much further back (z = -150) to create a permanent distant horizon
+   - Made the sun (pink gradient light) completely stationary in the background
+   - Positioned sun further back (z = -140) to serve as a fixed skybox element
+   - Removed all parallax movement code for background elements
+   - Improved sense of depth with fixed distant elements and moving foreground
+
+2. **Enhanced Visual Composition**:
+   - Better separation between moving elements (grid) and fixed background elements
+   - More consistent visual experience with stationary horizon elements
+   - Clearer spatial relationship between game elements
+   - More focused gameplay with fewer distracting background movements
+
 ## Future Development
 
 The modular architecture makes it easier to:
