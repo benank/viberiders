@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@types/three": "^0.174.0",
+    "jotai": "^2.12.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "^0.174.0"
