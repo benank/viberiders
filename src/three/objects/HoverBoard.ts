@@ -9,17 +9,14 @@ export class HoverBoard {
   private mesh: THREE.Group;
   private glowEffect: THREE.PointLight;
   private clock: THREE.Clock;
-  private boardMesh: THREE.Mesh;
-  private boardMaterial: THREE.ShaderMaterial;
+  private boardMesh!: THREE.Mesh;
+  private boardMaterial!: THREE.ShaderMaterial;
   private hoverHeight: number = 0.8; // Base hover height
   
   // Movement properties
   private position = { x: 0, z: 5 };
   private targetPosition = { x: 0, z: 5 };
-  private velocity = { x: 0, z: 0 };
   private speed = 0; // Forward speed
-  private maxSpeed = 30; // Maximum forward speed
-  private acceleration = 0.1; // Speed increase per second
   private lateralSpeed = 12; // Side-to-side movement speed - increased for responsiveness
   private laneWidth = 2.5; // Width of a lane
   private isMoving = false;
@@ -218,6 +215,22 @@ export class HoverBoard {
     
     // Ensure the hoverboard maintains its hover height plus the floating animation
     this.mesh.position.y = this.hoverHeight + floatOffset;
+  }
+
+  /**
+   * Reset the hoverboard to initial state
+   */
+  public reset(): void {
+    this.isMoving = false;
+    this.speed = 0;
+    this.currentLane = 1; // Reset to center lane
+    this.position.x = this.lanes[this.currentLane];
+    this.position.z = 5;
+    this.targetPosition.x = this.lanes[this.currentLane];
+    this.moveCooldown = 0;
+    this.mesh.position.x = this.position.x;
+    this.mesh.position.z = this.position.z;
+    this.mesh.rotation.z = 0;
   }
 
   /**

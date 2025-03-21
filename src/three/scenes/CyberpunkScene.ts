@@ -34,8 +34,6 @@ export class CyberpunkScene extends Scene {
   private keyStates: { [key: string]: boolean } = {};
   private store = getDefaultStore();
   private gameState: GameState = 'idle';
-  private speed = 5;
-  private cameraOffset = new THREE.Vector3(0, 3, 10);
   
   // Scene positions
   private gridInitialZ = 0;
@@ -640,8 +638,10 @@ export class CyberpunkScene extends Scene {
     const gridMesh = this.grid.getMesh();
     gridMesh.position.z = this.gridInitialZ;
     
-    // Reset hoverboard
-    this.hoverboard.reset();
+    // Reset hoverboard position and state
+    if (this.hoverboard) {
+      this.hoverboard.reset();
+    }
     
     // Clear obstacles
     for (const obstacle of this.obstacles) {

@@ -5,8 +5,8 @@ import * as THREE from 'three';
  */
 export class Grid {
   private gridGroup: THREE.Group;
-  private gridLines: THREE.GridHelper;
-  private floorPlane: THREE.Mesh;
+  private gridLines!: THREE.GridHelper;
+  private floorPlane!: THREE.Mesh;
   
   constructor(size: number = 100, divisions: number = 80) {
     // Create a group to hold all grid elements
@@ -117,7 +117,7 @@ export class Grid {
    * Update the grid (can be used for animations)
    * @param deltaTime Time since last frame
    */
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void {
     // We could add grid animation here in the future, like:
     // - Pulsing grid lines
     // - Flowing grid movement for cyberpunk effect

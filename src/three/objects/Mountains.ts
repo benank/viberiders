@@ -135,7 +135,7 @@ export class Mountains {
    * Update the mountains (can be used for animations)
    * @param deltaTime Time since last frame
    */
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void {
     // No update needed for static silhouettes
   }
   

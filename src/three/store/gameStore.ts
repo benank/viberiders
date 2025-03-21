@@ -42,21 +42,22 @@ export const finalScoreAtom = atom<number>((get) => {
 
 // High score atom that persists the highest score
 export const persistentHighScoreAtom = atom<number>(
-  (get) => get(highScoreAtom),
-  (get, set, update: number) => {
-    // Only update if the new score is higher
-    const currentHighScore = get(highScoreAtom);
-    if (update > currentHighScore) {
-      set(highScoreAtom, update);
-      // You could also persist to localStorage here if needed
-      try {
-        localStorage.setItem('vibeRidersHighScore', update.toString());
-      } catch (e) {
-        console.error('Failed to save high score to localStorage:', e);
-      }
+  (get) => get(highScoreAtom)
+);
+
+// Manually update the high score with this function
+export const updateHighScore = (newScore: number) => {
+  const store = getDefaultStore();
+  const currentHighScore = store.get(highScoreAtom);
+  if (newScore > currentHighScore) {
+    store.set(highScoreAtom, newScore);
+    try {
+      localStorage.setItem('vibeRidersHighScore', newScore.toString());
+    } catch (e) {
+      console.error('Failed to save high score to localStorage:', e);
     }
   }
-);
+};
 
 // Load high score from localStorage on initialization
 try {
@@ -80,28 +81,31 @@ export const gameStoreAtom = atom<GameStore>(
     highScore: get(highScoreAtom),
     speed: get(speedAtom),
     crystalCount: get(crystalCountAtom),
-  }),
-  (_, set, update: Partial<GameStore>) => {
-    if (update.gameState !== undefined) set(gameStateAtom, update.gameState);
-    if (update.distance !== undefined) set(distanceAtom, update.distance);
-    if (update.score !== undefined) set(scoreAtom, update.score);
-    if (update.highScore !== undefined) set(highScoreAtom, update.highScore);
-    if (update.speed !== undefined) set(speedAtom, update.speed);
-    if (update.crystalCount !== undefined) set(crystalCountAtom, update.crystalCount);
-  }
+  })
 );
 
+// Function to update the game store
+export const updateGameStore = (update: Partial<GameStore>) => {
+  const store = getDefaultStore();
+  if (update.gameState !== undefined) store.set(gameStateAtom, update.gameState);
+  if (update.distance !== undefined) store.set(distanceAtom, update.distance);
+  if (update.score !== undefined) store.set(scoreAtom, update.score);
+  if (update.highScore !== undefined) store.set(highScoreAtom, update.highScore);
+  if (update.speed !== undefined) store.set(speedAtom, update.speed);
+  if (update.crystalCount !== undefined) store.set(crystalCountAtom, update.crystalCount);
+};
+
 // Reset game
-export const resetGame = (set: (update: Partial<GameStore>) => void) => {
+export const resetGame = () => {
   // Store current score for high score comparison
   const store = getDefaultStore();
   const currentScore = store.get(finalScoreAtom);
   
   // Update high score if needed
-  store.set(persistentHighScoreAtom, currentScore);
+  updateHighScore(currentScore);
   
   // Reset game state
-  set({
+  updateGameStore({
     gameState: 'idle',
     distance: 0,
     score: 0,
@@ -125,7 +129,7 @@ export const gameOver = () => {
   const currentScore = store.get(finalScoreAtom);
   
   // Update high score if needed
-  store.set(persistentHighScoreAtom, currentScore);
+  updateHighScore(currentScore);
   
   // Set game state to game over
   store.set(gameStateAtom, 'gameOver');
@@ -133,11 +137,11 @@ export const gameOver = () => {
 
 // Helper function to restart the game
 export const restartGame = () => {
-  const store = getDefaultStore();
-  
   // Reset game state
-  store.set(gameStateAtom, 'idle');
-  store.set(distanceAtom, 0);
-  store.set(scoreAtom, 0);
-  store.set(crystalCountAtom, 0);
+  updateGameStore({
+    gameState: 'idle',
+    distance: 0,
+    score: 0,
+    crystalCount: 0,
+  });
 }; 
