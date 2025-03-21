@@ -1,7 +1,7 @@
-import CyberpunkGrid from './CyberpunkGrid';
+import { SceneManager } from './core/SceneManager';
 
 // Store the instance so we can access it later for cleanup
-let gridInstance: CyberpunkGrid | null = null;
+let sceneManager: SceneManager | null = null;
 
 /**
  * Initialize the cyberpunk grid background
@@ -9,21 +9,21 @@ let gridInstance: CyberpunkGrid | null = null;
  */
 export function initCyberpunkGrid(containerId: string): void {
   // Clean up any existing instance
-  if (gridInstance) {
-    gridInstance.dispose();
+  if (sceneManager) {
+    sceneManager.dispose();
   }
   
   // Create and initialize a new instance
-  gridInstance = new CyberpunkGrid();
-  gridInstance.init(containerId);
+  sceneManager = new SceneManager();
+  sceneManager.init(containerId);
 }
 
 /**
  * Clean up the Three.js resources
  */
 export function cleanupCyberpunkGrid(): void {
-  if (gridInstance) {
-    gridInstance.dispose();
-    gridInstance = null;
+  if (sceneManager) {
+    sceneManager.dispose();
+    sceneManager = null;
   }
 } 
