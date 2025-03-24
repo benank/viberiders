@@ -204,7 +204,6 @@ function App() {
       }}
     >
       {/* Three.js will be rendered as a canvas within this container with a lower z-index */}
-      
       {/* Game title at the top */}
       {gameState === 'idle' && (
         <div 
@@ -399,6 +398,7 @@ function App() {
           )}
         </div>
       )}
+      
     </div>
   )
 }

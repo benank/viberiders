@@ -1,8 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" 
+    <meta
+      http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' 'unsafe-eval';
@@ -11,15 +12,39 @@
         font-src 'self' https://fonts.gstatic.com;
         connect-src 'self' ws: wss:;
         frame-src 'none';
-        object-src 'none';" 
+        object-src 'none';"
     />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VIBE RIDERS</title>
   </head>
   <body>
     <div id="root"></div>
+    <a
+      target="_blank"
+      href="https://jam.pieter.com"
+      style="
+        font-family: 'system-ui', sans-serif;
+        position: fixed;
+        bottom: -1px;
+        right: -1px;
+        padding: 7px;
+        font-size: 14px;
+        font-weight: bold;
+        background: #fff;
+        color: #000;
+        text-decoration: none;
+        z-index: 10;
+        border-top-left-radius: 12px;
+        z-index: 10000;
+        border: 1px solid #fff;
+      "
+      >🕹️ Vibe Jam 2025</a
+    >
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
