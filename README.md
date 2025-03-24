@@ -1,5 +1,11 @@
 # 🏄‍♂️ VIBE RIDERS 🌐
 
+<div align="center">
+  <a href="https://viberiders.benank.com/" target="_blank">
+    <img src="https://img.shields.io/badge/🎮_PLAY_NOW-8A2BE2?style=for-the-badge" alt="Play Now" />
+  </a>
+</div>
+
 ## 🌆 Welcome to the Neon Grid
 
 **VIBE RIDERS** is a fast-paced, cyberpunk-themed endless runner where you navigate a futuristic hoverboard through a neon grid landscape, avoiding obstacles and collecting glowing crystals while racing into the digital horizon.
