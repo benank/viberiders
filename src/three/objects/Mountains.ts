@@ -25,41 +25,41 @@ export class Mountains {
   private createMountainSilhouettes(): void {
     // Create main center mountain range (wider and taller)
     const centerMountains = this.createSilhouette(
-      280, 40, 120, 12, 
+      280, 45, 140, 16, 
       { x: 0, y: 0, z: 0 },
-      0x330044  // Slightly brighter dark purple
+      0xff4488  // Pink
     );
     this.mountainGroup.add(centerMountains);
     
     // Create left mountains
     const leftMountains = this.createSilhouette(
-      200, 35, 80, 10, 
+      200, 40, 100, 14, 
       { x: -110, y: -1, z: 5 },
-      0x220033  // Dark purple
+      0xff8833  // Orange
     );
     this.mountainGroup.add(leftMountains);
     
     // Create right mountains
     const rightMountains = this.createSilhouette(
-      220, 38, 90, 10, 
+      220, 42, 110, 14, 
       { x: 120, y: -2, z: 10 },
-      0x330044  // Slightly brighter dark purple
+      0x9933ff  // Purple
     );
     this.mountainGroup.add(rightMountains);
     
     // Create a foreground accent mountain on the left
     const leftAccentMountain = this.createSilhouette(
-      100, 30, 50, 8, 
+      100, 35, 60, 12, 
       { x: -50, y: 1, z: 15 },
-      0x220033  // Dark purple
+      0x33aaff  // Blue
     );
     this.mountainGroup.add(leftAccentMountain);
     
     // Create a foreground accent mountain on the right
     const rightAccentMountain = this.createSilhouette(
-      120, 32, 55, 8, 
+      120, 38, 65, 12, 
       { x: 60, y: 0, z: 18 },
-      0x220033  // Dark purple
+      0xff66aa  // Pink-Purple
     );
     this.mountainGroup.add(rightAccentMountain);
   }
@@ -90,15 +90,19 @@ export class Mountains {
       const x = vertices[i];
       const z = vertices[i + 2];
       
-      // Use perlin noise for mountain peaks - increased height
-      const noise1 = this.perlinNoise.noise(x * 0.01 + noiseSeed, z * 0.01) * 2.5;
-      const noise2 = this.perlinNoise.noise(x * 0.03 + noiseSeed, z * 0.03) * 1.2;
+      // Use perlin noise for mountain peaks - increased factors for spikier mountains
+      const noise1 = this.perlinNoise.noise(x * 0.015 + noiseSeed, z * 0.015) * 4.0;
+      const noise2 = this.perlinNoise.noise(x * 0.04 + noiseSeed, z * 0.04) * 2.5;
+      const sharpNoise = this.perlinNoise.noise(x * 0.08 + noiseSeed * 2, z * 0.08) * 1.2;
       
-      // Combine noise layers for final height - increased for better visibility
-      const heightNoise = noise1 + noise2;
+      // Add sharp peaks at random intervals
+      const spikeFactor = Math.pow(Math.abs(this.perlinNoise.noise(x * 0.02, z * 0.02)), 2) * 3.0;
+      
+      // Combine noise layers for final height - increased for spikier mountains
+      const heightNoise = noise1 + noise2 + sharpNoise + spikeFactor;
       
       // Apply height to vertex with increased value
-      vertices[i + 1] = heightNoise * 1.5;
+      vertices[i + 1] = heightNoise * 2.5;
       
       // Create a smoother transition near the edges
       const distanceFromCenter = Math.sqrt(x*x + z*z) / (width/2);
@@ -111,9 +115,35 @@ export class Mountains {
     // Update normals for proper lighting
     geometry.computeVertexNormals();
     
-    // Create material - using basic material to ensure visibility
-    const material = new THREE.MeshBasicMaterial({
-      color: color,
+    // Create shader material with gradient effect for more synthwave style
+    const colors = [
+      new THREE.Color(color), 
+      new THREE.Color(0x220033) // Dark purple base
+    ];
+    
+    // Create gradient material
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        color1: { value: colors[0] },
+        color2: { value: colors[1] },
+      },
+      vertexShader: `
+        varying float vY;
+        void main() {
+          vY = position.y;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color1;
+        uniform vec3 color2;
+        varying float vY;
+        void main() {
+          // Create gradient based on y position
+          float t = clamp(vY / 5.0, 0.0, 1.0);
+          gl_FragColor = vec4(mix(color2, color1, t), 1.0);
+        }
+      `,
       side: THREE.DoubleSide
     });
     

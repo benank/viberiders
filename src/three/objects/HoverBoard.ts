@@ -107,7 +107,7 @@ export class HoverBoard {
    */
   public startMoving(): void {
     this.isMoving = true;
-    this.speed = 12; // Initial speed - increased for faster gameplay
+    this.speed = 16; // Initial speed - increased for faster gameplay
     this.currentLane = 1; // Reset to center lane
     this.targetPosition.x = this.lanes[this.currentLane];
     this.position.x = this.lanes[this.currentLane]; // Set position immediately to prevent sliding at start

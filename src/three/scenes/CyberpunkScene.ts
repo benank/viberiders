@@ -37,6 +37,8 @@ export class CyberpunkScene extends Scene {
   private backgroundMusic: HTMLAudioElement | null = null;
   private crystalSound: HTMLAudioElement | null = null;
   private explosionSound: HTMLAudioElement | null = null;
+  // Flag to ignore the first tap/click after starting the game
+  private ignoreNextTap: boolean = false;
   
   // Scene positions
   private gridInitialZ = 0;
@@ -83,8 +85,8 @@ export class CyberpunkScene extends Scene {
     // Add mountains to scene - position them as silhouettes in front of the sun
     const mountainsMesh = this.mountains.getMesh();
     mountainsMesh.position.z = this.mountainsInitialZ; // Position in front of the sun
-    mountainsMesh.position.y = 0; // Positioned at the horizon line
-    mountainsMesh.scale.set(1.2, 1.5, 1.0); // Larger scale for better visibility
+    mountainsMesh.position.y = -5; // Lowered below the grid to prevent floating
+    mountainsMesh.scale.set(1.3, 1.8, 1.0); // Increased vertical scale for more dramatic mountains
     this.scene.add(mountainsMesh);
     
     // Add grid to scene
@@ -501,6 +503,59 @@ export class CyberpunkScene extends Scene {
     window.addEventListener('keyup', (event) => {
       this.keyStates[event.code] = false;
     });
+    
+    // Setup touch and click controls
+    this.setupTouchClickControls();
+  }
+  
+  /**
+   * Set up touch and click controls for the hoverboard
+   */
+  private setupTouchClickControls(): void {
+    // Add click event listener to the document
+    document.addEventListener('click', this.handleTouchClick);
+    
+    // Add touch event listener for mobile devices
+    document.addEventListener('touchstart', this.handleTouchClick);
+  }
+  
+  /**
+   * Handle touch or click input
+   * @param event Mouse or touch event
+   */
+  private handleTouchClick = (event: MouseEvent | TouchEvent): void => {
+    if (this.gameState !== 'playing') return;
+    
+    // Ignore this tap/click if it's the one that started the game
+    if (this.ignoreNextTap) {
+      this.ignoreNextTap = false;
+      return;
+    }
+    
+    // Prevent default behavior to avoid scrolling or other unwanted actions
+    event.preventDefault();
+    
+    // Get the x coordinate of the click or touch
+    let clientX: number;
+    
+    if ('touches' in event) {
+      // Touch event
+      clientX = event.touches[0].clientX;
+    } else {
+      // Mouse event
+      clientX = event.clientX;
+    }
+    
+    // Get the width of the screen
+    const screenWidth = window.innerWidth;
+    const screenMiddle = screenWidth / 2;
+    
+    // Move left or right based on where the screen was touched/clicked
+    if (clientX < screenMiddle) {
+      this.hoverboard.moveLeft();
+    } else {
+      this.hoverboard.moveRight();
+    }
   }
   
   /**
@@ -530,9 +585,9 @@ export class CyberpunkScene extends Scene {
     // Get the speed from hoverboard
     const distance = this.hoverboard.getDistance();
     // Make speed increase more aggressively over time
-    const baseSpeed = 12;
-    const maxAdditionalSpeed = 30; // Increased max speed (was 18)
-    const accelerationFactor = 200; // Smaller number = faster acceleration (was 300)
+    const baseSpeed = 16;
+    const maxAdditionalSpeed = 40; // Increased max speed for faster gameplay
+    const accelerationFactor = 150; // Smaller number = faster acceleration
     const speed = baseSpeed + Math.min(distance / accelerationFactor, maxAdditionalSpeed);
     
     // Store speed in the hoverboard for distance calculation
@@ -615,6 +670,9 @@ export class CyberpunkScene extends Scene {
     this.gameState = newState;
     
     if (newState === 'playing') {
+      // Set flag to ignore the next tap/click (the one that started the game)
+      this.ignoreNextTap = true;
+      
       // Reset game variables
       this.gameTime = 0;
       this.nextObstacleTime = 4.0; // Start first obstacle after 4 seconds for better player ramp-up
@@ -693,6 +751,10 @@ export class CyberpunkScene extends Scene {
     // Remove event listeners
     window.removeEventListener('keydown', this.handleKeyboardInput);
     window.removeEventListener('keyup', this.handleKeyboardInput);
+    
+    // Remove touch and click event listeners
+    document.removeEventListener('click', this.handleTouchClick);
+    document.removeEventListener('touchstart', this.handleTouchClick);
     
     // Dispose grid
     this.grid.dispose();

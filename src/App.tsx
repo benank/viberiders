@@ -247,7 +247,9 @@ function App() {
           fontFamily: 'monospace',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center'
+          alignItems: 'center',
+          width: '100%',
+          textAlign: 'center'
         }}>
           <div>{distance.toString().padStart(6, '0')} m</div>
           <div style={{ 
@@ -292,15 +294,15 @@ function App() {
             GAME OVER
           </div>
           
-          <div style={{ marginBottom: '0.5rem', color: '#00ffff', fontSize: '1.5rem' }}>
+          <div style={{ marginBottom: '0.5rem', color: '#00ffff', fontSize: '1.5rem', textAlign: 'center' }}>
             Distance: <span style={{ fontWeight: 'bold' }}>{distance.toString().padStart(6, '0')} m</span>
           </div>
           
-          <div style={{ marginBottom: '0.5rem', color: '#00ffaa', fontSize: '1.5rem' }}>
+          <div style={{ marginBottom: '0.5rem', color: '#00ffaa', fontSize: '1.5rem', textAlign: 'center' }}>
             Crystals: <span style={{ fontWeight: 'bold' }}>{crystalCount} 💎</span>
           </div>
           
-          <div style={{ marginBottom: '1.5rem', color: '#00ffff', fontSize: '1.5rem' }}>
+          <div style={{ marginBottom: '1.5rem', color: '#00ffff', fontSize: '1.5rem', textAlign: 'center' }}>
             Final Score: <span style={{ fontWeight: 'bold' }}>{finalScore}</span>
           </div>
           
@@ -347,9 +349,11 @@ function App() {
             color: '#ff00ff', 
             textShadow: '0 0 5px #ff00ff',
             marginBottom: '1rem',
-            fontSize: '1rem'
+            fontSize: '1rem',
+            textAlign: 'center'
           }}>
-            Use ← → arrows or A/D keys to change lanes
+            Use ← → arrows or A/D keys to change lanes<br/>
+            Or tap/click left/right side of the screen
           </div>
           
           <button 
@@ -384,7 +388,8 @@ function App() {
               color: '#ffff00', 
               textShadow: '0 0 5px #ffff00',
               marginTop: '1rem',
-              fontSize: '1rem'
+              fontSize: '1rem',
+              textAlign: 'center'
             }}>
               High Score: {highScore}
             </div>

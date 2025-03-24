@@ -386,3 +386,52 @@ Each component can be developed, tested, and optimized independently, making fut
    - Enhanced overall game feel with synchronized audio-visual feedback
    - Streamlined visual presentation with less UI clutter
    - Maintained consistent cyberpunk aesthetic across all elements
+
+## Touch and Click Control System
+
+1. **Mobile-Friendly Controls**:
+   - Added touch and click input support for mobile devices and desktop
+   - Implemented left/right screen regions for intuitive lane changes
+   - Touching/clicking the left side of the screen moves the hoverboard left
+   - Touching/clicking the right side of the screen moves the hoverboard right
+   - Maintained consistent control responsiveness across all input methods
+
+2. **Multi-Input Support**:
+   - Seamless integration with existing keyboard controls
+   - Players can freely switch between touch/click and keyboard input
+   - Improved accessibility for mobile players
+   - Updated game instructions to explain all control options
+   - Maintained the same movement cooldown system for consistent gameplay feel
+
+3. **Technical Implementation**:
+   - Added event listeners for both mouse clicks and touch events
+   - Implemented responsive screen region detection based on window width
+   - Properly handled event propagation to prevent unwanted behavior
+   - Added clean removal of event listeners during game cleanup
+   - Ensured consistent gameplay experience across all platforms and input methods
+
+## Gameplay and UI Refinements
+
+1. **Enhanced Touch Controls**:
+   - Added first-tap prevention system to ignore the initial tap when starting the game
+   - Prevents accidental lane changes when tapping the "Start Game" button
+   - Improved touch responsiveness for a more intuitive mobile experience
+   - Created seamless transition between menu interaction and gameplay
+
+2. **Visual Balancing and Difficulty Tuning**:
+   - Reduced obstacle width by approximately 14% for better gameplay balance
+   - Provides more forgiving hitboxes while maintaining challenge
+   - Updated wall rendering to match narrower dimensions
+   - Adjusted edge frames and grid lines to match new obstacle proportions
+
+3. **Speed and Progression Improvements**:
+   - Increased initial hoverboard speed from 12 to 16 for more exciting gameplay from the start
+   - Provides a more immediate sense of speed when beginning a new game
+   - Maintains the same progressive acceleration curve for long-term challenge
+   - Better matches the difficulty progression to player skill development
+
+4. **UI Enhancement**:
+   - Center-aligned all text elements for improved visual consistency
+   - Enhanced readability across all screen sizes and orientations
+   - Applied consistent text styling throughout the game interface
+   - Maintained cyberpunk aesthetic while improving information presentation

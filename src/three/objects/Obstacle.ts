@@ -36,7 +36,7 @@ export class Obstacle {
    */
   private createObstacle(): void {
     // Create a wall-shaped obstacle (wider, thinner, taller)
-    const wallGeometry = new THREE.BoxGeometry(3.5, 3.0, 0.2);
+    const wallGeometry = new THREE.BoxGeometry(3.0, 3.0, 0.2);
     
     // Create material with built-in glow effect to avoid expensive lighting
     const wallMaterial = new THREE.MeshBasicMaterial({
@@ -53,7 +53,7 @@ export class Obstacle {
     this.mesh.add(wall);
     
     // Add a brighter edge frame with proper z-offset
-    const edgeGeometry = new THREE.BoxGeometry(3.6, 3.1, 0.1);
+    const edgeGeometry = new THREE.BoxGeometry(3.1, 3.1, 0.1);
     const edgeMaterial = new THREE.MeshBasicMaterial({
       color: 0x00ffff,
       transparent: true,
@@ -76,7 +76,7 @@ export class Obstacle {
    * Add grid lines to the wall for cyberpunk effect
    */
   private addGridLines(wall: THREE.Mesh): void {
-    const width = 3.5;
+    const width = 3.0;
     const height = 3.0;
     
     // Add horizontal grid lines
