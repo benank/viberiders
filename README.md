@@ -8,6 +8,8 @@
 
 **VIBE RIDERS** is a fast-paced, cyberpunk-themed endless runner where you navigate a futuristic hoverboard through a neon grid landscape, avoiding obstacles and collecting glowing crystals while racing into the digital horizon.
 
+_Note: Everything here, including this README, was generated via vibe coding - I haven't looked at any of the code. - Ben Ank_
+
 ## 🎮 How to Play
 
 - **🏁 Start**: Click the "START GAME" button to begin your journey
