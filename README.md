@@ -1,10 +1,8 @@
 # 🏄‍♂️ VIBE RIDERS 🌐
 
-<div align="center">
-  <a href="https://viberiders.benank.com/" target="_blank">
-    <img src="https://img.shields.io/badge/🎮_PLAY_NOW-8A2BE2?style=for-the-badge" alt="Play Now" />
-  </a>
-</div>
+<a href="https://viberiders.benank.com/" target="_blank">
+  <img src="https://img.shields.io/badge/🎮_PLAY_NOW-8A2BE2?style=for-the-badge" alt="Play Now" />
+</a>
 
 ## 🌆 Welcome to the Neon Grid
 
@@ -13,7 +11,7 @@
 ## 🎮 How to Play
 
 - **🏁 Start**: Click the "START GAME" button to begin your journey
-- **🎛️ Controls**: 
+- **🎛️ Controls**:
   - **Keyboard**: Use ← → arrow keys or A/D keys to change lanes
   - **Mobile/Desktop**: Tap/click the left or right side of the screen to move
 - **🏆 Objective**: Travel as far as possible while avoiding obstacles and collecting crystals
