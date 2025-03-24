@@ -69,7 +69,7 @@ export class CyberpunkScene extends Scene {
     this.camera.rotation.x = -0.3; // Adjusted angle to look at board and grid
     
     // Create scene objects
-    this.grid = new Grid(300, 120); // Larger grid for more immersive environment
+    this.grid = new Grid(300); // Larger grid for more immersive environment
     this.mountains = new Mountains();
     this.sun = new Sun();
     this.hoverboard = new HoverBoard();

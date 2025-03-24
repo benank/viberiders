@@ -10,7 +10,7 @@ export class Grid {
   private textureOffsetX: number = 0;
   private textureOffsetY: number = 0;
   
-  constructor(size: number = 100, divisions: number = 80) {
+  constructor(size: number = 100) {
     // Create a group to hold all grid elements
     this.gridGroup = new THREE.Group();
     
