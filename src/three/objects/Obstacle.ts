@@ -1,5 +1,11 @@
 import * as THREE from 'three';
 
+// Type of obstacle
+export enum ObstacleType {
+  WALL,        // Regular wall in one lane
+  DOUBLE_WALL  // Two walls forcing player to use a specific lane
+}
+
 /**
  * Represents a cyberpunk obstacle that the player must avoid
  */
@@ -9,20 +15,22 @@ export class Obstacle {
   private lane: number;
   private isActive: boolean = true;
   private boundingBox: THREE.Box3;
+  private obstacleType: ObstacleType;
   
   // Lane system (should match HoverBoard)
   private lanes = [-2.5, 0, 2.5]; // Left, Center, Right
   
-  constructor(lane: number = 1, startZ: number = -100) {
+  constructor(width: number = 0.8, startZ: number = -100, type: ObstacleType = ObstacleType.WALL, lane: number = 1) {
     this.mesh = new THREE.Group();
     this.lane = lane;
+    this.obstacleType = type;
     this.position = { 
       x: this.lanes[lane],
       z: startZ
     };
     
-    // Create the obstacle
-    this.createObstacle();
+    // Create the obstacle based on type
+    this.createObstacle(width);
     
     // Set initial position
     this.mesh.position.set(this.position.x, 0.8, this.position.z);
@@ -34,9 +42,23 @@ export class Obstacle {
   /**
    * Create the obstacle geometry and materials
    */
-  private createObstacle(): void {
+  private createObstacle(width: number): void {
+    switch (this.obstacleType) {
+      case ObstacleType.WALL:
+        this.createWallObstacle(width);
+        break;
+      case ObstacleType.DOUBLE_WALL:
+        this.createDoubleWallObstacle();
+        break;
+    }
+  }
+  
+  /**
+   * Create a standard wall obstacle
+   */
+  private createWallObstacle(width: number): void {
     // Create a wall-shaped obstacle (wider, thinner, taller)
-    const wallGeometry = new THREE.BoxGeometry(3.0, 3.0, 0.2);
+    const wallGeometry = new THREE.BoxGeometry(3.0 * width, 3.0, 0.2);
     
     // Create material with built-in glow effect to avoid expensive lighting
     const wallMaterial = new THREE.MeshBasicMaterial({
@@ -53,7 +75,7 @@ export class Obstacle {
     this.mesh.add(wall);
     
     // Add a brighter edge frame with proper z-offset
-    const edgeGeometry = new THREE.BoxGeometry(3.1, 3.1, 0.1);
+    const edgeGeometry = new THREE.BoxGeometry(3.1 * width, 3.1, 0.1);
     const edgeMaterial = new THREE.MeshBasicMaterial({
       color: 0x00ffff,
       transparent: true,
@@ -69,14 +91,77 @@ export class Obstacle {
     this.mesh.add(edge);
     
     // Add horizontal grid lines to the wall for cyberpunk effect
-    this.addGridLines(wall);
+    this.addGridLines(wall, width);
+  }
+  
+  /**
+   * Create a double wall obstacle with an opening in one lane
+   */
+  private createDoubleWallObstacle(): void {
+    // Determine positions of the two walls based on the lane
+    // We'll create two walls that block two lanes, forcing the player to use the third lane
+    const lanesBlocked = [];
+    let widthMultiplier = 0.65; // Slightly narrower walls
+    
+    // Choose the two lanes to block
+    if (this.lane === 0) {
+      // Block center and right lanes (force player to left)
+      lanesBlocked.push(1, 2);
+    } else if (this.lane === 1) {
+      // Block left and right lanes (force player to center)
+      lanesBlocked.push(0, 2);
+    } else {
+      // Block left and center lanes (force player to right)
+      lanesBlocked.push(0, 1);
+    }
+    
+    // Create each wall
+    lanesBlocked.forEach(blockedLane => {
+      // Create a wall-shaped obstacle
+      const wallGeometry = new THREE.BoxGeometry(3.0 * widthMultiplier, 3.0, 0.2);
+      
+      // Create material with built-in glow effect
+      const wallMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff3366, // Slightly different color for dual walls
+        transparent: true,
+        opacity: 0.7,
+        depthWrite: true
+      });
+      
+      // Create the main wall
+      const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+      wall.position.y = 1.5; // Position above grid
+      wall.position.x = this.lanes[blockedLane] - this.lanes[this.lane]; // Position relative to the lane of the obstacle
+      wall.renderOrder = 0;
+      this.mesh.add(wall);
+      
+      // Add a brighter edge frame
+      const edgeGeometry = new THREE.BoxGeometry(3.1 * widthMultiplier, 3.1, 0.1);
+      const edgeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.5,
+        depthWrite: true,
+        depthTest: true
+      });
+      
+      const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+      edge.position.y = 1.5;
+      edge.position.x = wall.position.x;
+      edge.position.z = -0.15; // Position behind the main wall
+      edge.renderOrder = -1;
+      this.mesh.add(edge);
+      
+      // Add grid lines
+      this.addGridLines(wall, widthMultiplier);
+    });
   }
   
   /**
    * Add grid lines to the wall for cyberpunk effect
    */
-  private addGridLines(wall: THREE.Mesh): void {
-    const width = 3.0;
+  private addGridLines(wall: THREE.Mesh, widthMultiplier: number = 1): void {
+    const width = 3.0 * widthMultiplier;
     const height = 3.0;
     
     // Add horizontal grid lines
@@ -158,6 +243,13 @@ export class Obstacle {
   }
   
   /**
+   * Get the obstacle type
+   */
+  public getType(): ObstacleType {
+    return this.obstacleType;
+  }
+  
+  /**
    * Check if the obstacle is in the given lane
    */
   public getLane(): number {
@@ -189,10 +281,33 @@ export class Obstacle {
   /**
    * Reset the obstacle to a new position
    */
-  public reset(lane: number, startZ: number): void {
+  public reset(lane: number, startZ: number, type: ObstacleType = ObstacleType.WALL): void {
     this.lane = lane;
     this.position.x = this.lanes[lane];
     this.position.z = startZ;
+    
+    // If type has changed, rebuild the obstacle
+    if (type !== this.obstacleType) {
+      this.obstacleType = type;
+      
+      // Clear existing meshes
+      while (this.mesh.children.length > 0) {
+        const child = this.mesh.children[0];
+        if (child instanceof THREE.Mesh) {
+          if (child.geometry) child.geometry.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach(material => material.dispose());
+          } else if (child.material) {
+            child.material.dispose();
+          }
+        }
+        this.mesh.remove(child);
+      }
+      
+      // Create new obstacle
+      this.createObstacle(0.8);
+    }
+    
     this.mesh.position.set(this.position.x, 0.8, startZ);
     this.isActive = true;
     this.mesh.visible = true;

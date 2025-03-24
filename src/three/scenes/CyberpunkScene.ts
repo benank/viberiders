@@ -4,7 +4,7 @@ import { Grid } from '../objects/Grid';
 import { Mountains } from '../objects/Mountains';
 import { Sun } from '../objects/Sun';
 import { HoverBoard } from '../objects/HoverBoard';
-import { Obstacle } from '../objects/Obstacle';
+import { Obstacle, ObstacleType } from '../objects/Obstacle';
 import { Crystal } from '../objects/Crystal';
 import { gameStateAtom, distanceAtom, GameState, scoreAtom, crystalCountAtom } from '../store/gameStore';
 import { getDefaultStore } from 'jotai';
@@ -39,6 +39,20 @@ export class CyberpunkScene extends Scene {
   private explosionSound: HTMLAudioElement | null = null;
   // Flag to ignore the first tap/click after starting the game
   private ignoreNextTap: boolean = false;
+  
+  // Particle systems
+  private crystalParticles: {
+    points: THREE.Points;
+    creationTime: number;
+    duration: number;
+    speed: number;
+  }[] = [];
+  private explosionParticles: THREE.Points | null = null;
+  private explosionMaterial: THREE.PointsMaterial | null = null;
+  private explosionGeometry: THREE.BufferGeometry | null = null;
+  private explosionStartTime: number = 0;
+  private explosionDuration: number = 1.5; // seconds
+  private isExploding: boolean = false;
   
   // Scene positions
   private gridInitialZ = 0;
@@ -131,6 +145,9 @@ export class CyberpunkScene extends Scene {
     
     // Initialize background music
     this.initializeAudio();
+    
+    // Initialize explosion particles system
+    this.initializeExplosionParticles();
   }
   
   /**
@@ -156,12 +173,12 @@ export class CyberpunkScene extends Scene {
    */
   private initializeObstaclePool(): void {
     // Create a pool of obstacles that we can reuse
-    const poolSize = 10; // Pool size of 10 obstacles should be more than enough
+    const poolSize = 15; // Increased pool size to accommodate different obstacle types
     
     for (let i = 0; i < poolSize; i++) {
       // Create obstacles but keep them far away and inactive initially
       // Using 0.8 width instead of 1 to make obstacles less wide
-      const obstacle = new Obstacle(0.8, -200);
+      const obstacle = new Obstacle(0.8, -200, ObstacleType.WALL);
       this.obstaclePool.push(obstacle);
       this.scene.add(obstacle.getMesh());
       obstacle.setActive(false); // Initially inactive
@@ -217,6 +234,20 @@ export class CyberpunkScene extends Scene {
     const obstacle = this.getObstacleFromPool();
     if (!obstacle) return; // No available obstacles in the pool
     
+    // Determine obstacle type based on player progress
+    // As the game progresses, increase the chance of double wall obstacles
+    const distance = this.hoverboard.getDistance();
+    let obstacleType = ObstacleType.WALL;
+    
+    // After 500 distance, start introducing double walls with increasing probability
+    if (distance > 500) {
+      // Probability increases with distance, capping at 40% chance
+      const doubleWallChance = Math.min(0.4, (distance - 500) / 2000);
+      if (Math.random() < doubleWallChance) {
+        obstacleType = ObstacleType.DOUBLE_WALL;
+      }
+    }
+    
     // Choose a random lane (0, 1, or 2)
     let lane = Math.floor(Math.random() * 3);
     
@@ -239,13 +270,12 @@ export class CyberpunkScene extends Scene {
     const startZ = -140; 
     
     // Initialize the obstacle
-    obstacle.reset(lane, startZ);
+    obstacle.reset(lane, startZ, obstacleType);
     
     // Add to active obstacles list
     this.obstacles.push(obstacle);
     
     // Set time for next obstacle - adjust timing based on current speed
-    const distance = this.hoverboard.getDistance();
     const speedFactor = Math.min(distance / 1000, 1); // Max speedup factor of 1
     
     // As the game progresses, decrease the minimum and maximum obstacle spacing
@@ -263,39 +293,43 @@ export class CyberpunkScene extends Scene {
   private spawnCrystal(): void {
     if (!this.crystalSpawningActive) return;
     
-    const crystal = this.getCrystalFromPool();
-    if (!crystal) return; // No available crystals in the pool
+    // Choose a pattern type
+    const patternType = Math.floor(Math.random() * 3); // 0: straight line, 1: zigzag, 2: diagonal
     
-    // Choose a random lane (0, 1, or 2)
-    let lane = Math.floor(Math.random() * 3);
+    // Pattern parameters
+    const startLane = Math.floor(Math.random() * 3); // 0, 1, or 2
+    const startZ = -130;
+    const spacing = 8; // Spacing between consecutive crystals in a pattern
     
-    // Check if there's already a crystal or obstacle in this lane that's too close
-    const tooClose = [...this.crystals, ...this.obstacles].some(existing => {
-      const existingZ = existing.getMesh().position.z;
-      const existingLane = existing instanceof Crystal 
-        ? existing.getLane() 
-        : (existing as Obstacle).getLane();
-      
-      // Don't spawn in the same lane if there's already something within 20 units
-      return (existingLane === lane) && (existingZ < -80) && (existingZ > -140);
-    });
-    
-    // If too close, try a different lane
-    if (tooClose) {
-      // Try a different lane (cyclically)
-      lane = (lane + 1 + Math.floor(Math.random() * 2)) % 3;
+    switch (patternType) {
+      case 0: // Straight line of 3 crystals in a single lane
+        this.spawnCrystalPattern(startLane, startZ, [
+          { laneOffset: 0, zOffset: 0 },
+          { laneOffset: 0, zOffset: spacing },
+          { laneOffset: 0, zOffset: spacing * 2 }
+        ]);
+        break;
+        
+      case 1: // Zigzag pattern across lanes
+        this.spawnCrystalPattern(startLane, startZ, [
+          { laneOffset: 0, zOffset: 0 },
+          { laneOffset: 1, zOffset: spacing * 0.7 },
+          { laneOffset: 0, zOffset: spacing * 1.4 },
+          { laneOffset: -1, zOffset: spacing * 2.1 },
+          { laneOffset: 0, zOffset: spacing * 2.8 }
+        ]);
+        break;
+        
+      case 2: // Diagonal line pattern
+        this.spawnCrystalPattern(startLane, startZ, [
+          { laneOffset: 0, zOffset: 0 },
+          { laneOffset: 1, zOffset: spacing },
+          { laneOffset: 2, zOffset: spacing * 2 }
+        ]);
+        break;
     }
     
-    // Ensure crystals are spawned far enough away to be invisible initially
-    const startZ = -130;
-    
-    // Initialize the crystal
-    crystal.reset(lane, startZ);
-    
-    // Add to active crystals list
-    this.crystals.push(crystal);
-    
-    // Set time for next crystal - adjust timing based on current speed
+    // Set time for next pattern - adjust timing based on current speed
     const distance = this.hoverboard.getDistance();
     const speedFactor = Math.min(distance / 1000, 1); // Max speedup factor of 1
     
@@ -303,8 +337,35 @@ export class CyberpunkScene extends Scene {
     const adjustedMinSpacing = Math.max(this.minCrystalSpacing - speedFactor, 1.0);
     const adjustedMaxSpacing = Math.max(this.maxCrystalSpacing - speedFactor, 2.0);
     
-    this.nextCrystalTime = this.gameTime + adjustedMinSpacing + 
-                          Math.random() * (adjustedMaxSpacing - adjustedMinSpacing);
+    // Longer delay between patterns compared to single crystals
+    this.nextCrystalTime = this.gameTime + (adjustedMinSpacing + 
+                          Math.random() * (adjustedMaxSpacing - adjustedMinSpacing)) * 2;
+  }
+  
+  /**
+   * Spawn a pattern of crystals based on offsets
+   * @param baseLane The starting lane (0, 1, or 2)
+   * @param baseZ The starting Z position
+   * @param pattern Array of { laneOffset, zOffset } defining the pattern
+   */
+  private spawnCrystalPattern(baseLane: number, baseZ: number, pattern: Array<{laneOffset: number, zOffset: number}>): void {
+    pattern.forEach(point => {
+      const crystal = this.getCrystalFromPool();
+      if (!crystal) return;
+      
+      // Calculate lane, keeping within valid range (0-2) and wrapping around
+      let lane = (baseLane + point.laneOffset) % 3;
+      if (lane < 0) lane += 3;
+      
+      // Calculate Z position
+      const startZ = baseZ - point.zOffset;
+      
+      // Initialize and position the crystal
+      crystal.reset(lane, startZ);
+      
+      // Add to active crystals list
+      this.crystals.push(crystal);
+    });
   }
   
   /**
@@ -449,23 +510,37 @@ export class CyberpunkScene extends Scene {
       this.explosionSound.play().catch(err => console.warn('Could not play explosion sound:', err));
     }
     
-    console.log('Collision! Game Over');
+    // Create explosion effect at hoverboard position
+    this.createExplosion();
   }
   
   /**
    * Handle collecting a crystal
    */
   private handleCrystalCollection(crystal: Crystal): void {
+    // Get crystal position before deactivating
+    const crystalPosition = crystal.getMesh().position.clone();
+    
     // Increase crystal count
     const currentCrystalCount = this.store.get(crystalCountAtom);
     this.store.set(crystalCountAtom, currentCrystalCount + 1);
     
     // Play crystal collection sound
     if (this.crystalSound) {
-      // Reset the sound to allow for rapid successive plays
-      this.crystalSound.currentTime = 0;
-      this.crystalSound.play().catch(err => console.warn('Could not play crystal sound:', err));
+      // Create a new audio instance for each crystal collection
+      // This allows multiple sounds to play simultaneously
+      const crystalSoundInstance = new Audio(this.crystalSound.src);
+      crystalSoundInstance.volume = this.crystalSound.volume;
+      crystalSoundInstance.play().catch(err => console.warn('Could not play crystal sound:', err));
+      
+      // Clean up the audio element after it finishes playing
+      crystalSoundInstance.onended = () => {
+        crystalSoundInstance.src = '';
+      };
     }
+    
+    // Create particle effect at crystal position
+    this.createCrystalParticles(crystalPosition);
     
     // Deactivate the crystal
     crystal.setActive(false);
@@ -475,9 +550,6 @@ export class CyberpunkScene extends Scene {
     if (index !== -1) {
       this.crystals.splice(index, 1);
     }
-    
-    // Visual/audio feedback could be added here
-    console.log('Crystal collected!');
   }
   
   /**
@@ -636,8 +708,18 @@ export class CyberpunkScene extends Scene {
     // Update scene movement
     this.updateSceneMovement(deltaTime);
     
-    // Check for collisions
-    this.checkCollisions();
+    // Check for collisions (only if not already exploding)
+    if (!this.isExploding) {
+      this.checkCollisions();
+    }
+    
+    // Update explosion effect if active
+    if (this.isExploding) {
+      this.updateExplosion(deltaTime);
+    }
+    
+    // Update crystal particles
+    this.updateCrystalParticles(deltaTime);
     
     // Update distance counter
     this.updateDistance();
@@ -701,6 +783,9 @@ export class CyberpunkScene extends Scene {
         crystal.setActive(false);
       }
       
+      // Make sure the hoverboard is visible (in case it was hidden by an explosion)
+      this.hoverboard.getMesh().visible = true;
+      
       // Start hoverboard movement
       this.hoverboard.startMoving();
       
@@ -729,6 +814,8 @@ export class CyberpunkScene extends Scene {
     // Reset hoverboard position and state
     if (this.hoverboard) {
       this.hoverboard.reset();
+      // Ensure hoverboard is visible - important after an explosion
+      this.hoverboard.getMesh().visible = true;
     }
     
     // Clear obstacles
@@ -742,6 +829,15 @@ export class CyberpunkScene extends Scene {
       crystal.setActive(false);
     }
     this.crystals = [];
+    
+    // Make sure explosion state is reset
+    this.isExploding = false;
+    if (this.explosionParticles) {
+      this.explosionParticles.visible = false;
+      if (this.explosionParticles.parent) {
+        this.explosionParticles.parent.remove(this.explosionParticles);
+      }
+    }
   }
   
   /**
@@ -794,6 +890,257 @@ export class CyberpunkScene extends Scene {
     if (this.explosionSound) {
       this.explosionSound.pause();
       this.explosionSound.src = '';
+    }
+    
+    // Dispose of particle systems
+    if (this.explosionGeometry) this.explosionGeometry.dispose();
+    if (this.explosionMaterial) this.explosionMaterial.dispose();
+    
+    for (const particles of this.crystalParticles) {
+      if (particles.points.geometry) particles.points.geometry.dispose();
+      if (particles.points.material instanceof THREE.Material) particles.points.material.dispose();
+    }
+    this.crystalParticles = [];
+  }
+
+  /**
+   * Initialize explosion particle system for collision effect
+   */
+  private initializeExplosionParticles(): void {
+    // Create particle system for explosion
+    this.explosionGeometry = new THREE.BufferGeometry();
+    
+    // 200 particles for explosion
+    const explosionParticleCount = 200;
+    const explosionPositions = new Float32Array(explosionParticleCount * 3);
+    const explosionColors = new Float32Array(explosionParticleCount * 3);
+    const explosionSizes = new Float32Array(explosionParticleCount);
+    
+    // Initialize with particles at origin, will be positioned during explosion
+    for (let i = 0; i < explosionParticleCount; i++) {
+      // Initial positions (will be updated when explosion happens)
+      explosionPositions[i * 3] = 0;
+      explosionPositions[i * 3 + 1] = 0;
+      explosionPositions[i * 3 + 2] = 0;
+      
+      // Colors - cyan/purple gradients
+      explosionColors[i * 3] = Math.random() * 0.5 + 0.5; // Red component (0.5-1.0)
+      explosionColors[i * 3 + 1] = Math.random() * 0.5; // Green component (0-0.5)
+      explosionColors[i * 3 + 2] = Math.random() * 0.5 + 0.5; // Blue component (0.5-1.0)
+      
+      // Particle sizes - varied for more realistic effect
+      explosionSizes[i] = Math.random() * 0.3 + 0.1;
+    }
+    
+    this.explosionGeometry.setAttribute('position', new THREE.BufferAttribute(explosionPositions, 3));
+    this.explosionGeometry.setAttribute('color', new THREE.BufferAttribute(explosionColors, 3));
+    this.explosionGeometry.setAttribute('size', new THREE.BufferAttribute(explosionSizes, 1));
+    
+    // Create point material with proper blending for glowing effect
+    this.explosionMaterial = new THREE.PointsMaterial({
+      size: 0.5,
+      transparent: true,
+      opacity: 0.8,
+      vertexColors: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    
+    // Create the particle system but don't add to scene yet
+    this.explosionParticles = new THREE.Points(this.explosionGeometry, this.explosionMaterial);
+    this.explosionParticles.visible = false;
+  }
+
+  /**
+   * Create crystal particles at the specified position
+   */
+  private createCrystalParticles(position: THREE.Vector3): void {
+    // Create a new particle system for each crystal collection
+    const geometry = new THREE.BufferGeometry();
+    const particleCount = 30;
+    
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+    
+    // Set initial positions around the crystal position
+    for (let i = 0; i < particleCount; i++) {
+      // Random position within a small sphere around the crystal
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 0.5;
+      const height = Math.random() * 0.5 - 0.25;
+      
+      positions[i * 3] = position.x + Math.cos(angle) * radius;
+      positions[i * 3 + 1] = position.y + height;
+      positions[i * 3 + 2] = position.z + Math.sin(angle) * radius;
+      
+      // Cyan/teal colors for crystal particles
+      colors[i * 3] = 0; // R
+      colors[i * 3 + 1] = 0.8 + Math.random() * 0.2; // G
+      colors[i * 3 + 2] = 0.8 + Math.random() * 0.2; // B
+      
+      // Varied sizes
+      sizes[i] = Math.random() * 0.3 + 0.1;
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    
+    // Create point material with proper blending for glowing effect
+    const material = new THREE.PointsMaterial({
+      size: 0.2,
+      transparent: true,
+      opacity: 0.8,
+      vertexColors: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    
+    // Create the particle system and add to the scene
+    const particles = new THREE.Points(geometry, material);
+    this.scene.add(particles);
+    
+    // Calculate current game speed - use the same logic as in updateSceneMovement
+    const distance = this.hoverboard.getDistance();
+    const baseSpeed = 16;
+    const maxAdditionalSpeed = 40;
+    const accelerationFactor = 150;
+    const currentSpeed = baseSpeed + Math.min(distance / accelerationFactor, maxAdditionalSpeed);
+    
+    // Add to array for tracking with creation time and speed
+    this.crystalParticles.push({
+      points: particles,
+      creationTime: this.gameTime,
+      duration: 1.5, // 1.5 seconds lifetime
+      speed: currentSpeed // Store current game speed
+    });
+  }
+
+  /**
+   * Create explosion effect at the hoverboard's position
+   */
+  private createExplosion(): void {
+    if (!this.explosionParticles || !this.explosionGeometry || this.isExploding) return;
+    
+    // Get hoverboard position
+    const hoverboardPosition = this.hoverboard.getMesh().position.clone();
+    
+    // Hide the hoverboard
+    this.hoverboard.getMesh().visible = false;
+    
+    // Position the explosion at the hoverboard's location
+    this.explosionParticles.position.copy(hoverboardPosition);
+    
+    // Update positions for a spherical explosion
+    const positions = this.explosionGeometry.attributes.position.array as Float32Array;
+    const particleCount = positions.length / 3;
+    
+    for (let i = 0; i < particleCount; i++) {
+      // Random direction for each particle
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      const r = Math.random() * 1.5;
+      
+      positions[i * 3] = Math.sin(phi) * Math.cos(theta) * r;
+      positions[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * r;
+      positions[i * 3 + 2] = Math.cos(phi) * r;
+    }
+    
+    // Tell Three.js to update the attribute
+    this.explosionGeometry.attributes.position.needsUpdate = true;
+    
+    // Add to scene and make visible
+    this.scene.add(this.explosionParticles);
+    this.explosionParticles.visible = true;
+    
+    // Track explosion state and time
+    this.isExploding = true;
+    this.explosionStartTime = this.gameTime;
+  }
+
+  /**
+   * Update explosion particles
+   */
+  private updateExplosion(deltaTime: number): void {
+    if (!this.isExploding || !this.explosionParticles || !this.explosionMaterial || !this.explosionGeometry) return;
+    
+    const elapsedTime = this.gameTime - this.explosionStartTime;
+    const progress = elapsedTime / this.explosionDuration;
+    
+    if (progress >= 1.0) {
+      // Explosion finished
+      this.isExploding = false;
+      this.explosionParticles.visible = false;
+      if (this.explosionParticles.parent) {
+        this.explosionParticles.parent.remove(this.explosionParticles);
+      }
+      return;
+    }
+    
+    // Update positions for outward movement
+    const positions = this.explosionGeometry.attributes.position.array as Float32Array;
+    const particleCount = positions.length / 3;
+    
+    // Move particles outward and fade out opacity based on progress
+    const speedFactor = 1 - progress; // Slow down as the explosion progresses
+    this.explosionMaterial.opacity = 1 - progress;
+    
+    for (let i = 0; i < particleCount; i++) {
+      positions[i * 3] += positions[i * 3] * deltaTime * 2 * speedFactor;
+      positions[i * 3 + 1] += positions[i * 3 + 1] * deltaTime * 2 * speedFactor;
+      positions[i * 3 + 2] += positions[i * 3 + 2] * deltaTime * 2 * speedFactor;
+    }
+    
+    // Update positions
+    this.explosionGeometry.attributes.position.needsUpdate = true;
+  }
+
+  /**
+   * Update crystal particles
+   */
+  private updateCrystalParticles(deltaTime: number): void {
+    // Update each particle system and remove expired ones
+    for (let i = this.crystalParticles.length - 1; i >= 0; i--) {
+      const particleSystem = this.crystalParticles[i];
+      const particles = particleSystem.points;
+      const positions = particles.geometry.attributes.position.array as Float32Array;
+      const particleCount = positions.length / 3;
+      
+      // Calculate lifetime progress (0 to 1)
+      const elapsedTime = this.gameTime - particleSystem.creationTime;
+      const progress = Math.min(elapsedTime / particleSystem.duration, 1.0);
+      
+      // Fade out based on progress
+      if (particles.material instanceof THREE.PointsMaterial) {
+        particles.material.opacity = 0.8 * (1 - progress);
+      }
+      
+      // Move particles upward, outward, and forward with the game
+      for (let j = 0; j < particleCount; j++) {
+        positions[j * 3] += Math.random() * 0.1 - 0.05; // Random horizontal movement
+        positions[j * 3 + 1] += 0.8 * deltaTime; // Upward movement
+        positions[j * 3 + 2] += particleSystem.speed * deltaTime; // Continue moving forward with game speed
+      }
+      
+      // Update the attribute
+      particles.geometry.attributes.position.needsUpdate = true;
+      
+      // Remove fully faded particles
+      if (progress >= 1.0) {
+        if (particles.parent) {
+          particles.parent.remove(particles);
+        }
+        
+        // Dispose resources
+        particles.geometry.dispose();
+        if (particles.material instanceof THREE.Material) {
+          particles.material.dispose();
+        }
+        
+        // Remove from array
+        this.crystalParticles.splice(i, 1);
+      }
     }
   }
 } 
