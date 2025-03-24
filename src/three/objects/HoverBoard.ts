@@ -55,24 +55,6 @@ export class HoverBoard {
     this.boardMesh = new THREE.Mesh(boardGeometry, this.boardMaterial);
     this.mesh.add(this.boardMesh);
     
-    // Add orange thruster at the back
-    const thrusterLight = new THREE.PointLight(0xff6600, 2, 1);
-    thrusterLight.position.set(0, 0, 1.2);
-    this.mesh.add(thrusterLight);
-
-    // Add thruster visual effect
-    const thrusterGeometry = new THREE.CircleGeometry(0.1, 16);
-    const thrusterMaterial = new THREE.MeshBasicMaterial({
-      color: 0xff6600,
-      transparent: true,
-      opacity: 0.6,
-      side: THREE.DoubleSide
-    });
-    const thruster = new THREE.Mesh(thrusterGeometry, thrusterMaterial);
-    thruster.position.set(0, 0, 1.2);
-    thruster.rotation.y = Math.PI / 2;
-    this.mesh.add(thruster);
-    
     // Add hover glow effect beneath the board
     const hoverGlowGeometry = new THREE.PlaneGeometry(0.7, 2.2);
     const hoverGlowMaterial = new THREE.MeshBasicMaterial({

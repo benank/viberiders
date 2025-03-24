@@ -55,7 +55,6 @@ export class CyberpunkScene extends Scene {
   private isExploding: boolean = false;
   
   // Scene positions
-  private gridInitialZ = 0;
   private mountainsInitialZ = -138; // Slightly in front of the sun
   private sunInitialZ = -140; // Far back as a background element
   
@@ -103,9 +102,8 @@ export class CyberpunkScene extends Scene {
     mountainsMesh.scale.set(1.3, 1.8, 1.0); // Increased vertical scale for more dramatic mountains
     this.scene.add(mountainsMesh);
     
-    // Add grid to scene
+    // Add grid to scene - no need to set position as it's static now with texture scrolling
     const gridMesh = this.grid.getMesh();
-    gridMesh.position.z = this.gridInitialZ;
     this.scene.add(gridMesh);
     
     // Set up hoverboard - let it hover above the grid naturally
@@ -665,16 +663,8 @@ export class CyberpunkScene extends Scene {
     // Store speed in the hoverboard for distance calculation
     this.hoverboard.setSpeed(speed);
     
-    // Move the grid to create illusion of movement
-    const gridMesh = this.grid.getMesh();
-    
-    // Reset grid position if it's gone too far
-    if (gridMesh.position.z > 30) {
-      gridMesh.position.z = this.gridInitialZ;
-    }
-    
-    // Move grid forward
-    gridMesh.position.z += speed * deltaTime;
+    // Update grid texture scrolling (instead of moving the grid)
+    this.grid.update(deltaTime, speed);
     
     // Update obstacles with the same speed
     this.updateObstacles(deltaTime, speed);
@@ -724,10 +714,7 @@ export class CyberpunkScene extends Scene {
     // Update distance counter
     this.updateDistance();
     
-    // Update grid
-    this.grid.update(deltaTime);
-    
-    // Update mountains
+    // Mountains
     this.mountains.update(deltaTime);
     
     // Update sun
@@ -807,9 +794,8 @@ export class CyberpunkScene extends Scene {
    * Reset the scene for a new game
    */
   public resetGame(): void {
-    // Reset grid position
-    const gridMesh = this.grid.getMesh();
-    gridMesh.position.z = this.gridInitialZ;
+    // Reset grid texture offset
+    this.grid.resetTextureOffset();
     
     // Reset hoverboard position and state
     if (this.hoverboard) {

@@ -216,7 +216,9 @@ function App() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            marginTop: '2rem'
+            marginTop: '2rem',
+            width: '100%',
+            textAlign: 'center'
           }}
         >
           <div className="glowing-text" style={{ fontSize: '4rem', fontWeight: 'bold' }}>
@@ -284,10 +286,11 @@ function App() {
             border: '1px solid #ff00ff'
           }}
         >
-          <div className="glowing-text" style={{ 
+          <div className="glowing-text-pink" style={{ 
             fontSize: '3rem', 
             fontWeight: 'bold',
             color: '#ff00ff',
+            textAlign: 'center',
             textShadow: '0 0 15px #ff00ff',
             marginBottom: '1rem'
           }}>
