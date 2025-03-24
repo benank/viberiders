@@ -656,9 +656,15 @@ export class CyberpunkScene extends Scene {
     const distance = this.hoverboard.getDistance();
     // Make speed increase more aggressively over time
     const baseSpeed = 16;
-    const maxAdditionalSpeed = 40; // Increased max speed for faster gameplay
-    const accelerationFactor = 150; // Smaller number = faster acceleration
-    const speed = baseSpeed + Math.min(distance / accelerationFactor, maxAdditionalSpeed);
+    const maxAdditionalSpeed = 50; // Increased from 40 for higher top speed
+    const accelerationFactor = 100; // Reduced from 150 for faster acceleration
+    
+    // Add exponential acceleration for progressively faster speed over time
+    const linearAcceleration = distance / accelerationFactor;
+    const exponentialFactor = Math.pow(distance / 1000, 1.5) * 5; // Exponential growth with distance
+    const additionalSpeed = Math.min(linearAcceleration + exponentialFactor, maxAdditionalSpeed);
+    
+    const speed = baseSpeed + additionalSpeed;
     
     // Store speed in the hoverboard for distance calculation
     this.hoverboard.setSpeed(speed);
