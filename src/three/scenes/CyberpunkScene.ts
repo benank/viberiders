@@ -34,6 +34,9 @@ export class CyberpunkScene extends Scene {
   private keyStates: { [key: string]: boolean } = {};
   private store = getDefaultStore();
   private gameState: GameState = 'idle';
+  private backgroundMusic: HTMLAudioElement | null = null;
+  private crystalSound: HTMLAudioElement | null = null;
+  private explosionSound: HTMLAudioElement | null = null;
   
   // Scene positions
   private gridInitialZ = 0;
@@ -123,6 +126,27 @@ export class CyberpunkScene extends Scene {
     
     // Initialize crystal pool
     this.initializeCrystalPool();
+    
+    // Initialize background music
+    this.initializeAudio();
+  }
+  
+  /**
+   * Initialize audio elements
+   */
+  private initializeAudio(): void {
+    // Create background music
+    this.backgroundMusic = new Audio('/vibing.mp3');
+    this.backgroundMusic.loop = true;
+    this.backgroundMusic.volume = 0.25;
+    
+    // Create crystal sound effect
+    this.crystalSound = new Audio('/crystal.mp3');
+    this.crystalSound.volume = 0.5;
+    
+    // Create explosion sound effect
+    this.explosionSound = new Audio('/explode.mp3');
+    this.explosionSound.volume = 0.6;
   }
   
   /**
@@ -134,7 +158,8 @@ export class CyberpunkScene extends Scene {
     
     for (let i = 0; i < poolSize; i++) {
       // Create obstacles but keep them far away and inactive initially
-      const obstacle = new Obstacle(1, -200);
+      // Using 0.8 width instead of 1 to make obstacles less wide
+      const obstacle = new Obstacle(0.8, -200);
       this.obstaclePool.push(obstacle);
       this.scene.add(obstacle.getMesh());
       obstacle.setActive(false); // Initially inactive
@@ -416,7 +441,12 @@ export class CyberpunkScene extends Scene {
     this.obstacleSpawningActive = false;
     this.crystalSpawningActive = false;
     
-    // Visual/audio feedback could be added here
+    // Play explosion sound effect
+    if (this.explosionSound) {
+      this.explosionSound.currentTime = 0;
+      this.explosionSound.play().catch(err => console.warn('Could not play explosion sound:', err));
+    }
+    
     console.log('Collision! Game Over');
   }
   
@@ -427,6 +457,13 @@ export class CyberpunkScene extends Scene {
     // Increase crystal count
     const currentCrystalCount = this.store.get(crystalCountAtom);
     this.store.set(crystalCountAtom, currentCrystalCount + 1);
+    
+    // Play crystal collection sound
+    if (this.crystalSound) {
+      // Reset the sound to allow for rapid successive plays
+      this.crystalSound.currentTime = 0;
+      this.crystalSound.play().catch(err => console.warn('Could not play crystal sound:', err));
+    }
     
     // Deactivate the crystal
     crystal.setActive(false);
@@ -445,23 +482,11 @@ export class CyberpunkScene extends Scene {
    * Create lane markers to show the three lanes
    */
   private createLaneMarkers(): void {
-    const laneWidth = 2.5;
-    const lanePositions = [-laneWidth, 0, laneWidth]; // Same as HoverBoard.lanes
+    // Lane markers are now invisible - keeping the method for future reference
+    // and to maintain the same structure of the code
     
-    // Create a simple lane marker for each lane
-    lanePositions.forEach(xPos => {
-      // Create a glowing line to represent the lane
-      const markerGeometry = new THREE.BoxGeometry(0.2, 0.05, 60); // Made markers longer
-      const markerMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ffff,
-        transparent: true,
-        opacity: 0.3,
-      });
-      
-      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-      marker.position.set(xPos, 0.01, 5); // Slightly above the grid
-      this.scene.add(marker);
-    });
+    // The lanes still functionally exist in the game at positions:
+    // -2.5, 0, 2.5 (same as HoverBoard.lanes)
   }
   
   /**
@@ -620,6 +645,11 @@ export class CyberpunkScene extends Scene {
       
       // Start hoverboard movement
       this.hoverboard.startMoving();
+      
+      // Start playing the music when game starts
+      if (this.backgroundMusic) {
+        this.backgroundMusic.play().catch(err => console.warn('Could not play audio:', err));
+      }
     } else if (newState === 'gameOver') {
       // Stop hoverboard movement
       this.hoverboard.stopMoving();
@@ -684,6 +714,24 @@ export class CyberpunkScene extends Scene {
     // Dispose crystals
     for (const crystal of this.crystalPool) {
       crystal.dispose();
+    }
+    
+    // Stop and remove music
+    if (this.backgroundMusic) {
+      this.backgroundMusic.pause();
+      this.backgroundMusic.src = '';
+    }
+    
+    // Clean up crystal sound
+    if (this.crystalSound) {
+      this.crystalSound.pause();
+      this.crystalSound.src = '';
+    }
+    
+    // Clean up explosion sound
+    if (this.explosionSound) {
+      this.explosionSound.pause();
+      this.explosionSound.src = '';
     }
   }
 } 
